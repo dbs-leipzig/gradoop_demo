@@ -368,6 +368,12 @@ function initializeDropDownMenus(keys) {
 
     //add the new keys to the dropdown menus, the property data-numerical holds the information
     //if the property is of numerical type
+
+    var vertexLabelHtml = '' +
+        '<li><input type ="checkbox" value ="label" data-numerical="false" /> label</li>';
+
+    vertexSelect.append(vertexLabelHtml);
+
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
         var vertexHtml =
@@ -378,11 +384,17 @@ function initializeDropDownMenus(keys) {
         vertexSelect.append(vertexHtml);
     }
 
+    var edgeLabelHtml = '' +
+        '<li><input type ="checkbox" value ="label" data-numerical="false" /> label</li>';
+
+    edgeSelect.append(edgeLabelHtml);
+
     for (var j = 0; j < keys.edgeKeys.length; j++) {
         var edgeKey = keys.edgeKeys[j];
         var edgeHtml =
             '<li><input type="checkbox" value="' + edgeKey.name + '" ' +
-            'data-numerical="' + edgeKey.numerical + '"/>' + edgeKey.name + '</li>';
+            'data-numerical="' + edgeKey.numerical + '"/>'
+            + '&lt;' + edgeKey.labels + '&gt;.' +  edgeKey.name + '</li>';
         edgeSelect.append(edgeHtml);
     }
 

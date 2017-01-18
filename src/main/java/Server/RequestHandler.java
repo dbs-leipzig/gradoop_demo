@@ -6,6 +6,7 @@ import Server.functions.LabelGroupReducer;
 import Server.functions.PropertyKeyMapper;
 import Server.functions.MergeToSet;
 import Server.pojo.GroupingRequest;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.LocalCollectionOutputFormat;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -213,7 +214,20 @@ public class RequestHandler {
 
     //construct the grouping with the parameters send by the request
     Grouping.GroupingBuilder builder = new Grouping.GroupingBuilder();
+    int position;
+    position = ArrayUtils.indexOf(request.getVertexKeys(), "label");
+    if(position > -1) {
+      builder.useVertexLabel(true);
+      request.setVertexKeys((String[])ArrayUtils.remove(request.getVertexKeys(), position));
+    }
     builder.addVertexGroupingKeys(Arrays.asList(request.getVertexKeys()));
+
+
+    position = ArrayUtils.indexOf(request.getEdgeKeys(), "label");
+    if(position > -1) {
+      builder.useEdgeLabel(true);
+      request.setEdgeKeys((String[])ArrayUtils.remove(request.getEdgeKeys(), position));
+    }
     builder.addEdgeGroupingKeys(Arrays.asList(request.getEdgeKeys()));
     String[] vertexAggrFunc = request.getVertexAggrFunc().split(" ");
 
