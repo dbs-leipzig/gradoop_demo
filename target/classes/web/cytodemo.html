@@ -1,0 +1,79 @@
+<html>
+<head>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="qtip/jquery.qtip.css">
+    <link href="cytodemo.css" rel="stylesheet"/>
+    <meta charset=utf-8/>
+    <script src="jquery/jquery-1.11.3.min.js"></script>
+    <script src="cytoscape/cytoscape.min.js"></script>
+    <script src="cytoscape/cytoscape-qtip.js"></script>
+    <script src="qtip/jquery.qtip.min.js"></script>
+    <script src="cytodemo.js"></script>
+</head>
+<body>
+<div id="sidebar">
+
+    <img id="logo" src="gradoop.svg"/>
+
+    <table id="stats">
+    </table>
+
+    <br>
+    <select id="databases">
+        <option selected disabled="true">Select a database</option>
+    </select>
+    <br>
+
+    <dl class="dropdown" id="vertexDropdown">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select vertex grouping keys</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
+
+    <dl class="dropdown" id="edgeDropdown">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select edge grouping keys</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
+
+    <br>
+    <select class="aggrFuncs" id="vertexAggrFuncs">
+        <option selected disabled="true">Select a vertex aggregate function</option>
+    </select>
+    <br>
+    <br>
+    <select class="aggrFuncs" id="edgeAggrFuncs">
+        <option selected disabled="true">Select an edge aggregate function</option>
+    </select>
+    <br>
+
+    <button type="button" id="exec">Execute</button>
+</div>
+<div id="canvas">
+    <div id="loading"></div>
+</div>
+
+
+</body>
+</html>

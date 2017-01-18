@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+
+    .link {
+        stroke: #999;
+    }
+
+    .arrow {
+        fill: #000;
+    }
+
+</style>
+<head>
+    <meta charset="utf-8">
+    <title>D3 Test</title>
+    <script src="../jquery/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="../d3/d3.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+
+    $.post("http://localhost:8080/grala/", "foo")
+            .done(function (data) {
+
+                var nodes = data.nodes;
+                var links = data.edges;
+
+                var nodeDict = {};
+
+                var nodesLength = nodes.length;
+
+                for (i = 0; i < nodesLength; i++) {
+                    var n = nodes[i];
+                    var key = n.id;
+                    nodeDict[key] = n;
+                }
+
+                for (var i = 0; i < links.length; i++) {
+                    var l = links[i];
+                    l.source = nodeDict[l.sourceID];
+                    l.target = nodeDict[l.targetID];
+                }
+
+                var force = d3.layout.force()
+                        .charge(-2000)
+                        .linkDistance(100)
+                        .size([w, h]);
+
+                var svg = d3.select("body").append("svg")
+                        .attr("width", w)
+                        .attr("height", h);
+
+                force.nodes(nodes)
+                        .links(links)
+                        .start();
+
+
+                var linkGroup = svg.selectAll("g.linkGroup")
+                        .data(links)
+                        .enter().append("g")
+                        .attr("class", "linkGroup");
+
+                var link = linkGroup.append("line")
+                        .attr("class", "link");
+
+                var arrow = linkGroup.append("polygon", ".link")
+                        .attr("class", "arrow");
+
+                /*   var linkLabel = linkGroup.append("text")
+                 .attr("class", "linkLabel")
+                 .attr("font-family", "sans-serif")
+                 .attr("font-size", "20px")
+                 .attr("text-anchor", "middle")
+                 .text(function (d) {
+                 return d.label;
+                 });*/
+
+
+                var nodeGroup = svg.selectAll("g.nodeGroup")
+                        .data(nodes)
+                        .enter()
+                        .append("g", ".arrow")
+                        .attr("class", "nodeGroup")
+                        .call(force.drag);
+
+                var nodeLabel = nodeGroup.append("text")
+                        .attr("class", "nodeLabel")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", "20px")
+                        .attr("x", 10)
+                        .attr("y", 10)
+                        .text(function (d) {
+                            return d.label;
+                        });
+
+
+                var color = d3.scale.category20();
+
+                var arc = d3.svg.arc()
+                        .outerRadius(10);
+
+                var pie = d3.layout.pie()
+                        .value(function (d) {
+                            return 1;
+                        })
+                        .sort(null);
+
+                var node = nodeGroup.selectAll(".nodeSegment")
+                        .data(
+                        function (d) {
+                            var graphs = d.graphs;
+                            if (graphs == undefined) {
+                                graphs = [];
+                            }
+                            var graphObjects = [];
+                            for (i = 0; i < graphs.length; i++) {
+                                var graphObject = {};
+                                graphObject.id = graphs[i];
+                                graphObjects[i] = graphObject;
+                            }
+                            return pie(graphObjects);
+                        })
+                        .enter()
+                        .append("path")
+                        .attr("class", "nodeSegment")
+                        .attr("d", arc)
+                        .attr("fill", function (d) {
+                            return color(d.data.id);
+                        });
+
+                /*
+                 var node = nodeGroup.append("circle")
+                 .attr("class", "node")
+                 .attr("r", 8);
+                 */
+
+                force.on("tick", function () {
+
+                    linkGroup.selectAll(".link")
+                            .attr("x1", function (d) {
+                                return d.source.x
+                            })
+                            .attr("y1", function (d) {
+                                return d.source.y
+                            })
+                            .attr("x2", function (d) {
+                                return d.target.x
+                            })
+                            .attr("y2", function (d) {
+                                return d.target.y
+                            });
+
+                    linkGroup.selectAll(".linkLabel")
+                            .attr("x", function (d) {
+                                return (d.source.x + d.target.x) / 2;
+                            })
+                            .attr("y", function (d) {
+                                return ((d.source.y + d.target.y) / 2) - 5;
+                            })
+                            .attr("transform", function (d) {
+                                var sourcex = d.source.x,
+                                        sourcey = d.source.y,
+                                        targetx = d.target.x,
+                                        targety = d.target.y;
+                                return ("rotate("
+                                + (Math.atan2(targety - sourcey, targetx - sourcex)
+                                / Math.PI * 180) + ", "
+                                + (sourcex + targetx) / 2 + ", "
+                                + (((sourcey + targety) / 2) - 5)
+                                + ")");
+                            });
+
+                    linkGroup.selectAll(".arrow")
+                            .attr("points", function (d) {
+
+                                var vector = [d.target.x - d.source.x,
+                                    d.target.y - d.source.y];
+
+                                var linkLength =
+                                        Math.sqrt(
+                                                vector[0] * vector[0] +
+                                                vector[1] * vector[1]);
+                                if (linkLength == 0) {
+                                    return ("0,0");
+                                }
+
+                                var normalized = [vector[0] / linkLength,
+                                    vector[1] / linkLength];
+
+                                var orthogonal = [normalized[1],
+                                    normalized[0] * (-1)];
+
+
+                                var p1 = (d.target.x - normalized[0] * 10) +
+                                        "," +
+                                        (d.target.y - normalized[1] * 10);
+
+
+                                var p2 = (d.target.x - normalized[0] * 20 +
+                                        (orthogonal[0] * 3)) + "," +
+                                        (d.target.y - normalized[1] * 20 +
+                                        (orthogonal[1] * 3));
+
+                                var p3 = (d.target.x - normalized[0] * 20 -
+                                        (orthogonal[0] * 3)) + "," +
+                                        (d.target.y - normalized[1] * 20 -
+                                        (orthogonal[1] * 3));
+
+                                return p1 + " " + p2 + " " + p3;
+                            });
+
+                    nodeGroup.attr("transform", function (d) {
+                        return "translate(" + [d.x, d.y] + ")";
+                    });
+                });
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                alert(errorThrown);
+            });
+
+</script>
+</body>
+</html>
