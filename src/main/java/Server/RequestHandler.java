@@ -2,11 +2,15 @@ package Server; /**
  * Created by niklas on 03.01.17.
  */
 
+import Server.functions.LabelFilter;
 import Server.functions.LabelGroupReducer;
+import Server.functions.LabelMapper;
+import Server.functions.LabelReducer;
 import Server.functions.PropertyKeyMapper;
 import Server.functions.MergeToSet;
 import Server.pojo.GroupingRequest;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.LocalCollectionOutputFormat;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -41,11 +45,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+
 /**
  * Handles REST requests to the server.
  */
 @Path("")
 public class RequestHandler {
+
+
+  List<String> bufferedVertexLabels;
+  List<String> bufferedEdgeLabels;
 
   private static final ExecutionEnvironment ENV = ExecutionEnvironment.createLocalEnvironment();
   private GradoopFlinkConfig config = GradoopFlinkConfig.createConfig(ENV);
@@ -87,7 +96,7 @@ public class RequestHandler {
   @POST
   @Path("/keys/{databaseName}")
   @Produces("application/json;charset=utf-8")
-  public Response getPropertyKeys(@PathParam("databaseName") String databaseName) {
+  public Response getKeysAndLabels(@PathParam("databaseName") String databaseName) {
 
     // load the database
     String graphPath =
@@ -107,7 +116,8 @@ public class RequestHandler {
     try {
       jsonObject.put("vertexKeys", getVertexKeys(graph));
       jsonObject.put("edgeKeys", getEdgeKeys(graph));
-
+      jsonObject.put("vertexLabels", getVertexLabels(graph));
+      jsonObject.put("edgeLabels", getEdgeLabels(graph));
       return Response.ok(jsonObject.toString()).build();
     } catch (Exception e) {
       e.printStackTrace();
@@ -180,6 +190,34 @@ public class RequestHandler {
     return keyArray;
   }
 
+  private JSONArray getVertexLabels(LogicalGraph graph) throws Exception {
+    Set<String> vertexLabels = graph.getVertices()
+      .map(new LabelMapper<Vertex>())
+      .reduce(new LabelReducer())
+      .collect()
+      .get(0);
+
+    return buildArrayFromLabels(vertexLabels);
+  }
+
+  private JSONArray getEdgeLabels(LogicalGraph graph ) throws Exception {
+    Set<String> edgeLabels = graph.getEdges()
+      .map(new LabelMapper<Edge>())
+      .reduce(new LabelReducer())
+      .collect()
+      .get(0);
+
+    return buildArrayFromLabels(edgeLabels);
+  }
+
+  private JSONArray buildArrayFromLabels(Set<String> labels) {
+    JSONArray labelArray = new JSONArray();
+    for(String label : labels) {
+       labelArray.put(label);
+    }
+    return labelArray;
+  }
+
   /**
    * Takes a {@link GroupingRequest}, executes a grouping with the parameters it contains and
    * returns the results as a JSON.
@@ -192,6 +230,8 @@ public class RequestHandler {
   @Path("/data")
   @Produces("application/json;charset=utf-8")
   public Response getData(GroupingRequest request) throws Exception {
+
+    System.out.println(request.toString());
 
     //load the database
     String dbName = request.getDbName();
@@ -211,6 +251,10 @@ public class RequestHandler {
     GradoopId graphId = collection.getGraphHeads().collect().get(0).getId();
 
     LogicalGraph graph = source.getGraphCollection().getGraph(graphId);
+
+    graph = graph.subgraph(
+      new LabelFilter<Vertex>(request.getVertexFilters()),
+      new LabelFilter<Edge>(request.getEdgeFilters()));
 
     //construct the grouping with the parameters send by the request
     Grouping.GroupingBuilder builder = new Grouping.GroupingBuilder();

@@ -22,6 +22,10 @@ public class GroupingRequest {
    */
   private String[] edgeKeys;
 
+  private String[] vertexFilters;
+
+  private String[] edgeFilters;
+
   /**
    * vertex aggregation function
    */
@@ -34,6 +38,7 @@ public class GroupingRequest {
 
   /**
    * set the database name
+   *
    * @param dbName database name
    */
   public void setDbName(String dbName) {
@@ -42,6 +47,7 @@ public class GroupingRequest {
 
   /**
    * set the vertex grouping keys
+   *
    * @param vertexKeys vertex grouping keys
    */
   public void setVertexKeys(String[] vertexKeys) {
@@ -50,6 +56,7 @@ public class GroupingRequest {
 
   /**
    * set the edge grouping keys
+   *
    * @param edgeKeys edge grouping keys
    */
   public void setEdgeKeys(String[] edgeKeys) {
@@ -58,6 +65,7 @@ public class GroupingRequest {
 
   /**
    * set the vertex aggregation function
+   *
    * @param vertexAggrFunc vertex aggregation function
    */
   public void setVertexAggrFunc(String vertexAggrFunc) {
@@ -66,6 +74,7 @@ public class GroupingRequest {
 
   /**
    * set the edge aggregation function
+   *
    * @param edgeAggrFunc edge aggregation function
    */
   public void setEdgeAggrFunc(String edgeAggrFunc) {
@@ -74,6 +83,7 @@ public class GroupingRequest {
 
   /**
    * get the database name
+   *
    * @return database name
    */
   public String getDbName() {
@@ -82,6 +92,7 @@ public class GroupingRequest {
 
   /**
    * get the vertex grouping keys
+   *
    * @return vertex grouping keys
    */
   public String[] getVertexKeys() {
@@ -90,6 +101,7 @@ public class GroupingRequest {
 
   /**
    * get the edge grouping keys
+   *
    * @return edge grouping keys
    */
   public String[] getEdgeKeys() {
@@ -98,6 +110,7 @@ public class GroupingRequest {
 
   /**
    * get the vertex aggregation function
+   *
    * @return vertex aggregation function
    */
   public String getVertexAggrFunc() {
@@ -106,6 +119,7 @@ public class GroupingRequest {
 
   /**
    * get the edge aggregation function
+   *
    * @return edge aggregation function
    */
   public String getEdgeAggrFunc() {
@@ -114,17 +128,36 @@ public class GroupingRequest {
 
   /**
    * Returns a human readable representation of the request.
+   *
    * @return human readable string
    */
   @Override
   public String toString() {
-    return "DB name: " + dbName + "\n" +
+    return
+      "DB name: " + dbName + "\n" +
       "Vertex keys: " + Arrays.toString(vertexKeys) + "\n" +
       "Edge keys: " + Arrays.toString(edgeKeys) + "\n" +
       "Vertex aggrFunc: " + vertexAggrFunc + "\n" +
-      "Edge aggrFunc: " + edgeAggrFunc + "\n";
+      "Edge aggrFunc: " + edgeAggrFunc + "\n" +
+      "Vertex filters: " + Arrays.toString(vertexFilters) + "\n" +
+      "Edge filters: " + Arrays.toString(edgeFilters) + "\n";
 
 
   }
 
+  public String[] getVertexFilters() {
+    return vertexFilters;
+  }
+
+  public void setVertexFilters(String[] vertexFilters) {
+    this.vertexFilters = vertexFilters;
+  }
+
+  public String[] getEdgeFilters() {
+    return edgeFilters;
+  }
+
+  public void setEdgeFilters(String[] edgeFilters) {
+    this.edgeFilters = edgeFilters;
+  }
 }

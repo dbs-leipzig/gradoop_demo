@@ -25,7 +25,45 @@
     </select>
     <br>
 
-    <dl class="dropdown" id="vertexDropdown">
+    <p>
+        <label id="filter"><input type="checkbox" name="filter" value="filter" id="showFilters">
+            Show filtering options
+        </label>
+    </p>
+
+    <dl class="filterKeys" id="vertexFilters">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select vertex label filters</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
+
+    <dl class="filterKeys" id="edgeFilters">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select edge label filters</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
+
+    <dl class="propertyKeys" id="vertexPropertyKeys">
         <dt>
             <a href="#">
                 <span class="instruction">Select vertex grouping keys</span>
@@ -41,7 +79,7 @@
         </dd>
     </dl>
 
-    <dl class="dropdown" id="edgeDropdown">
+    <dl class="propertyKeys" id="edgePropertyKeys">
         <dt>
             <a href="#">
                 <span class="instruction">Select edge grouping keys</span>

@@ -58,7 +58,7 @@ button {
 #exec{
 }
 
-#input {
+#propertyCheckbox {
     width: 280px;
     height: 300px;
     resize: none;
@@ -84,6 +84,8 @@ button {
     background-size: 160px 120px;
 }
 
+
+
 select {
     float: left;
     background-color: #fff;
@@ -91,37 +93,38 @@ select {
     outline:0px;
 }
 
-.dropdown {
-    text-align: left;
-}
 
 a {
     color: #fff;
 }
 
-.dropdown dd,
-.dropdown dt {
+.propertyKeys {
+    text-align: left;
+}
+
+.propertyKeys dd,
+.propertyKeys dt {
     margin: 0px;
     padding: 0px;
 }
 
-.dropdown ul {
+.propertyKeys ul {
     margin: -1px 0 0 0;
 }
 
-.dropdown dd {
+.propertyKeys dd {
     position: relative;
 }
 
-.dropdown a,
-.dropdown a:visited {
+.propertyKeys a,
+.propertyKeys a:visited {
     color: #000;
     text-decoration: none;
     outline: none;
     font-size: 12px;
 }
 
-.dropdown dt a {
+.propertyKeys dt a {
     background-color: #fff;
     display: block;
     padding: 8px 20px 5px 10px;
@@ -132,14 +135,14 @@ a {
     width: 272px;
 }
 
-.dropdown dt a span,
+.propertyKeys dt a span,
 .multiSel span {
     cursor: pointer;
     display: inline-block;
     padding: 0 3px 2px 0;
 }
 
-.dropdown dd ul {
+.propertyKeys dd ul {
     background-color: #fff;
     border: 0;
     color: #000;
@@ -154,15 +157,105 @@ a {
     overflow: auto;
 }
 
-.dropdown span.value {
+.propertyKeys span.value {
     display: none;
 }
 
-.dropdown dd ul li a {
+.propertyKeys dd ul li a {
     padding: 5px;
     display: block;
 }
 
-.dropdown dd ul li a:hover {
+.propertyKeys dd ul li a:hover {
     background-color: #000;
+}
+
+#filter {
+    display: table-cell;
+    vertical-align: middle;
+    font-size: 12px;
+    height: 20px;
+}
+
+
+.filterKeys {
+    text-align: left;
+}
+
+.filterKeys dd,
+.filterKeys dt {
+    margin: 0px;
+    padding: 0px;
+}
+
+.filterKeys ul {
+    margin: -1px 0 0 0;
+}
+
+.filterKeys dd {
+    position: relative;
+}
+
+.filterKeys a,
+.filterKeys a:visited {
+    color: #000;
+    text-decoration: none;
+    outline: none;
+    font-size: 12px;
+}
+
+.filterKeys dt a {
+    background-color: #fff;
+    display: block;
+    padding: 8px 20px 5px 10px;
+    min-height: 25px;
+    line-height: 24px;
+    overflow: hidden;
+    border: 0;
+    width: 272px;
+}
+
+.filterKeys dt a span,
+.multiSel span {
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 3px 2px 0;
+}
+
+.filterKeys dd ul {
+    background-color: #fff;
+    border: 0;
+    color: #000;
+    display: none;
+    left: 0px;
+    padding: 2px 15px 2px 5px;
+    position: absolute;
+    top: 2px;
+    width: 280px;
+    list-style: none;
+    height: 100px;
+    overflow: auto;
+}
+
+.filterKeys span.value {
+    display: none;
+}
+
+.filterKeys dd ul li a {
+    padding: 5px;
+    display: block;
+}
+
+.filterKeys dd ul li a:hover {
+    background-color: #000;
+}
+
+#filterCheckbox {
+    width: 280px;
+    height: 300px;
+    resize: none;
+    background-color: #383838 ;
+    color:#CCFF99;
+    border-radius: 5px;
+
 }
