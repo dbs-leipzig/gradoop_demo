@@ -58,7 +58,7 @@ button {
 #exec{
 }
 
-#propertyCheckbox {
+#checkbox {
     width: 280px;
     height: 300px;
     resize: none;
@@ -98,51 +98,51 @@ a {
     color: #fff;
 }
 
-.propertyKeys {
+.dropDown {
     text-align: left;
 }
 
-.propertyKeys dd,
-.propertyKeys dt {
+.dropDown dd,
+.dropDown dt {
     margin: 0px;
     padding: 0px;
 }
 
-.propertyKeys ul {
+.dropDown ul {
     margin: -1px 0 0 0;
 }
 
-.propertyKeys dd {
+.dropDown dd {
     position: relative;
 }
 
-.propertyKeys a,
-.propertyKeys a:visited {
+.dropDown a,
+.dropDown a:visited {
     color: #000;
     text-decoration: none;
     outline: none;
     font-size: 12px;
 }
 
-.propertyKeys dt a {
+.dropDown dt a {
     background-color: #fff;
     display: block;
     padding: 8px 20px 5px 10px;
-    min-height: 25px;
-    line-height: 24px;
+    min-height: 10px;
+    line-height: 10px;
     overflow: hidden;
     border: 0;
     width: 272px;
 }
 
-.propertyKeys dt a span,
+.dropDown dt a span,
 .multiSel span {
     cursor: pointer;
     display: inline-block;
     padding: 0 3px 2px 0;
 }
 
-.propertyKeys dd ul {
+.dropDown dd ul {
     background-color: #fff;
     border: 0;
     color: #000;
@@ -157,16 +157,16 @@ a {
     overflow: auto;
 }
 
-.propertyKeys span.value {
+.dropDown span.value {
     display: none;
 }
 
-.propertyKeys dd ul li a {
+.dropDown dd ul li a {
     padding: 5px;
     display: block;
 }
 
-.propertyKeys dd ul li a:hover {
+.dropDown dd ul li a:hover {
     background-color: #000;
 }
 
@@ -177,85 +177,26 @@ a {
     height: 20px;
 }
 
+.MyQtip {
 
-.filterKeys {
-    text-align: left;
-}
+    /** Taken from Bootstrap body */
+    font-size: 14px;
+    line-height: 20px;
+    color: #333333;
 
-.filterKeys dd,
-.filterKeys dt {
-    margin: 0px;
-    padding: 0px;
-}
+    /** Taken from Bootstrap .popover */
+    padding: 1px;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -webkit-background-clip: padding-box;
+    -moz-background-clip: padding;
+    background-clip: padding-box;
 
-.filterKeys ul {
-    margin: -1px 0 0 0;
-}
-
-.filterKeys dd {
-    position: relative;
-}
-
-.filterKeys a,
-.filterKeys a:visited {
-    color: #000;
-    text-decoration: none;
-    outline: none;
-    font-size: 12px;
-}
-
-.filterKeys dt a {
-    background-color: #fff;
-    display: block;
-    padding: 8px 20px 5px 10px;
-    min-height: 25px;
-    line-height: 24px;
-    overflow: hidden;
-    border: 0;
-    width: 272px;
-}
-
-.filterKeys dt a span,
-.multiSel span {
-    cursor: pointer;
-    display: inline-block;
-    padding: 0 3px 2px 0;
-}
-
-.filterKeys dd ul {
-    background-color: #fff;
-    border: 0;
-    color: #000;
-    display: none;
-    left: 0px;
-    padding: 2px 15px 2px 5px;
-    position: absolute;
-    top: 2px;
-    width: 280px;
-    list-style: none;
-    height: 100px;
-    overflow: auto;
-}
-
-.filterKeys span.value {
-    display: none;
-}
-
-.filterKeys dd ul li a {
-    padding: 5px;
-    display: block;
-}
-
-.filterKeys dd ul li a:hover {
-    background-color: #000;
-}
-
-#filterCheckbox {
-    width: 280px;
-    height: 300px;
-    resize: none;
-    background-color: #383838 ;
-    color:#CCFF99;
-    border-radius: 5px;
-
+    max-width: 1000px;
 }

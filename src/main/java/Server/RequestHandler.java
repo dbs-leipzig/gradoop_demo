@@ -21,6 +21,7 @@ import org.gradoop.common.model.impl.id.GradoopId;
 import org.gradoop.common.model.impl.pojo.Edge;
 import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
+import org.gradoop.flink.io.impl.json.JSONDataSink;
 import org.gradoop.flink.io.impl.json.JSONDataSource;
 import org.gradoop.flink.model.impl.GraphCollection;
 import org.gradoop.flink.model.impl.LogicalGraph;
@@ -38,8 +39,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +62,7 @@ import java.util.Set;
 @Path("")
 public class RequestHandler {
 
+  private final String META_FILENAME = "/metadata.json";
 
   List<String> bufferedVertexLabels;
   List<String> bufferedEdgeLabels;
@@ -97,14 +108,36 @@ public class RequestHandler {
   @Path("/keys/{databaseName}")
   @Produces("application/json;charset=utf-8")
   public Response getKeysAndLabels(@PathParam("databaseName") String databaseName) {
+    URL meta = RequestHandler.class.getResource("/data/" + databaseName + META_FILENAME);
+    try {
+      if (meta == null) {
+        JSONObject result = computeKeysAndLabels(databaseName);
+        if (result == null) {
+          return Response.serverError().build();
+        }
+        return Response.ok(result.toString()).build();
+      } else {
+        JSONObject result = readKeysAndLabels(databaseName);
+        if (result == null) {
+          return Response.serverError().build();
+        }
+        return Response.ok(readKeysAndLabels(databaseName).toString()).build();
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      // if any exception is thrown, return an error to the client
+      return Response.serverError().build();
+    }
+  }
 
+  private JSONObject computeKeysAndLabels(String databaseName) {
     // load the database
     String graphPath =
-      Server.class.getResource("/data/" + databaseName + "/graphs.json").getPath();
+      RequestHandler.class.getResource("/data/" + databaseName + "/graphs.json").getPath();
     String vertexPath =
-      Server.class.getResource("/data/" + databaseName + "/vertices.json").getPath();
+      RequestHandler.class.getResource("/data/" + databaseName + "/vertices.json").getPath();
     String edgePath =
-      Server.class.getResource("/data/" + databaseName + "/edges.json").getPath();
+      RequestHandler.class.getResource("/data/" + databaseName + "/edges.json").getPath();
 
     JSONDataSource source = new JSONDataSource(graphPath, vertexPath, edgePath, config);
 
@@ -118,16 +151,31 @@ public class RequestHandler {
       jsonObject.put("edgeKeys", getEdgeKeys(graph));
       jsonObject.put("vertexLabels", getVertexLabels(graph));
       jsonObject.put("edgeLabels", getEdgeLabels(graph));
-      return Response.ok(jsonObject.toString()).build();
+      String dataPath = RequestHandler.class.getResource("/data/" + databaseName).getFile();
+      FileWriter writer = new FileWriter(dataPath + META_FILENAME);
+      jsonObject.write(writer);
+      writer.flush();
+      writer.close();
+
+      return jsonObject;
     } catch (Exception e) {
       e.printStackTrace();
       // if any exception is thrown, return an error to the client
-      return Response.serverError().build();
+      return null;
     }
   }
 
+  private JSONObject readKeysAndLabels(String databaseName) throws Exception {
+    String dataPath = RequestHandler.class.getResource("/data/" + databaseName).getFile();
+    String content =
+      new String(Files.readAllBytes(Paths.get(dataPath + META_FILENAME)), StandardCharsets.UTF_8);
+
+    return new JSONObject(content);
+  }
+
   /**
-   * Takes any given graph and reates a JSONArray containing the vertex property keys and a boolean,
+   * Takes any given graph and creates a JSONArray containing the vertex property keys and a
+   * boolean,
    * specifying it the property has a numerical type.
    * @param graph input graph
    * @return  JSON array with property keys and boolean, that is true if the property type is
@@ -237,11 +285,11 @@ public class RequestHandler {
     String dbName = request.getDbName();
 
     String graphPath =
-      Server.class.getResource("/data/" + dbName + "/graphs.json").getPath();
+      RequestHandler.class.getResource("/data/" + dbName + "/graphs.json").getPath();
     String vertexPath =
-      Server.class.getResource("/data/" + dbName + "/vertices.json").getPath();
+      RequestHandler.class.getResource("/data/" + dbName + "/vertices.json").getPath();
     String edgePath =
-      Server.class.getResource("/data/" + dbName + "/edges.json").getPath();
+      RequestHandler.class.getResource("/data/" + dbName + "/edges.json").getPath();
 
     JSONDataSource source = new JSONDataSource(graphPath, vertexPath, edgePath, config);
 
@@ -273,37 +321,52 @@ public class RequestHandler {
       request.setEdgeKeys((String[])ArrayUtils.remove(request.getEdgeKeys(), position));
     }
     builder.addEdgeGroupingKeys(Arrays.asList(request.getEdgeKeys()));
-    String[] vertexAggrFunc = request.getVertexAggrFunc().split(" ");
 
-    switch (vertexAggrFunc[0]) {
-    case "max":
-      builder.addVertexAggregator(new MaxAggregator(vertexAggrFunc[1], "max"));
-      break;
-    case "min":
-      builder.addVertexAggregator(new MinAggregator(vertexAggrFunc[1], "min"));
-      break;
-    case "sum":
-      builder.addVertexAggregator(new SumAggregator(vertexAggrFunc[1], "sum"));
-      break;
-    default:
-      builder.addVertexAggregator(new CountAggregator());
-      break;
+    String[] vertexAggrFuncs = request.getVertexAggrFuncs();
+
+    for(String vertexAggrFunc : vertexAggrFuncs) {
+      String[] split = vertexAggrFunc.split(" ");
+      switch (split[0]) {
+      case "max":
+        builder.addVertexAggregator(new MaxAggregator(split[1], "max"));
+        break;
+      case "min":
+        builder.addVertexAggregator(new MinAggregator(split[1], "min"));
+        break;
+      case "sum":
+        builder.addVertexAggregator(new SumAggregator(split[1], "sum"));
+        break;
+      case "count":
+        builder.addVertexAggregator(new CountAggregator());
+        break;
+      default:
+        System.out.println(vertexAggrFunc);
+        System.out.println("hö");
+      }
     }
 
-    String[] edgeAggrFunc = request.getEdgeAggrFunc().split(" ");
-    switch (edgeAggrFunc[0]) {
-    case "max":
-      builder.addEdgeAggregator(new MaxAggregator(edgeAggrFunc[1], "max"));
-      break;
-    case "min":
-      builder.addEdgeAggregator(new MinAggregator(edgeAggrFunc[1], "min"));
-      break;
-    case "sum":
-      builder.addEdgeAggregator(new SumAggregator(edgeAggrFunc[1], "sum"));
-      break;
-    default:
-      builder.addEdgeAggregator(new CountAggregator());
-      break;
+
+
+    String[] edgeAggrFuncs = request.getEdgeAggrFuncs();
+
+    for(String edgeAggrFunc : edgeAggrFuncs) {
+      String[] split = edgeAggrFunc.split(" ");
+      switch (split[0]) {
+      case "max":
+        builder.addEdgeAggregator(new MaxAggregator(split[1], "max"));
+        break;
+      case "min":
+        builder.addEdgeAggregator(new MinAggregator(split[1], "min"));
+        break;
+      case "sum":
+        builder.addEdgeAggregator(new SumAggregator(split[1], "sum"));
+        break;
+      case "count":
+        builder.addEdgeAggregator(new CountAggregator());
+        break;
+      default:
+        System.out.println("hö");
+      }
     }
 
     // by default, we use the group reduce strategy

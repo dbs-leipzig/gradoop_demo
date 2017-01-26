@@ -19,8 +19,8 @@ $(document).ready(function () {
         request.dbName = getSelectedDatabase();
         request.vertexKeys = getSelectedVertexKeys();
         request.edgeKeys = getSelectedEdgeKeys();
-        request.vertexAggrFunc = getSelectedVertexAggregateFunction();
-        request.edgeAggrFunc = getSelectedEdgeAggregateFunction();
+        request.vertexAggrFuncs = getSelectedVertexAggregateFunctions();
+        request.edgeAggrFuncs = getSelectedEdgeAggregateFunctions();
         request.vertexFilters = getSelectedVertexFilters();
         request.edgeFilters = getSelectedEdgeFilters();
 
@@ -241,7 +241,7 @@ function showGraph(data) {
                         at: 'bottom center'
                     },
                     style: {
-                        classes: 'qtip-bootstrap'
+                        classes: 'MyQtip'
                     }
                 });
                 //options for the force layout
@@ -330,15 +330,28 @@ function initializeDatabaseMenu(databases) {
     databaseSelect.children().on('click', sendKeyRequest);
 
     //on click, the dropdown menus open, this has to be done here so it is done only once
-    $('.propertyKeys dt a').on('click', function () {
-        $(this).closest('.propertyKeys').find("ul").slideToggle('fast');
+    $('#vertexFilters').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
     });
-    $('.filterKeys dt a').on('click', function () {
-        $(this).closest('.filterKeys').find("ul").slideToggle('fast');
+    $('#edgeFilters').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
     });
 
+    $('#vertexPropertyKeys').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
+    });
+    $('#edgePropertyKeys').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
+    });
+
+    $('#vertexAggrFuncs').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
+    });
+    $('#edgeAggrFuncs').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find("ul").slideToggle('fast');
+    });
     $(document).bind('click', function (e) {
-        var $clicked = $(e.target);//.hasClass("propertyKeys"))
+        var $clicked = $(e.target);
         if (!$clicked.parents("#vertexPropertyKeys").length)
             $("#vertexPropertyKeys").find("dd ul").hide();
         if (!$clicked.parents("#edgePropertyKeys").length)
@@ -347,6 +360,10 @@ function initializeDatabaseMenu(databases) {
             $("#vertexFilters").find("dd ul").hide();
         if (!$clicked.parents("#edgeFilters").length)
             $("#edgeFilters").find("dd ul").hide();
+        if (!$clicked.parents("#vertexAggrFuncs").length)
+            $("#vertexAggrFuncs").find("dd ul").hide();
+        if (!$clicked.parents("#edgeAggrFuncs").length)
+            $("#edgeAggrFuncs").find("dd ul").hide();
     });
 }
 
@@ -373,43 +390,51 @@ function sendKeyRequest() {
 function initializeOtherMenus(keys) {
     initializeFilterKeyMenus(keys);
     initializePropertyKeyMenus(keys);
-    initializeAggregateFunctionSelect(keys);
+    initializeAggregateFunctionMenus(keys);
 }
 
 function initializeFilterKeyMenus(keys) {
 
-    var vertexFilterSelect = $('#vertexFilters').find("dd .multiSelect ul").empty();
+    var vertexFilters = $('#vertexFilters');
+    var edgeFilters = $('#edgeFilters');
+
+    var vertexFilterSelect = vertexFilters.find("dd .multiSelect ul").empty();
+    var edgeFilterSelect = edgeFilters.find("dd .multiSelect ul").empty();
 
     for (var i = 0; i < keys.vertexLabels.length; i++) {
         var vertexLabel = keys.vertexLabels[i];
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexLabel + '" ' +
-            ' class="filterCheckbox"/>' + vertexLabel + '</li>';
+            ' class="checkbox"/>' + vertexLabel + '</li>';
         vertexFilterSelect.append(vertexHtml);
     }
-
-    var edgeFilterSelect = $('#edgeFilters').find("dd .multiSelect ul").empty();
 
     for (var i = 0; i < keys.edgeLabels.length; i++) {
         var edgeLabel = keys.edgeLabels[i];
         var edgeHtml =
             '<li><input type="checkbox" value="' + edgeLabel + '" ' +
-            ' class="filterCheckbox"/>' + edgeLabel + '</li>';
+            ' class="checkbox"/>' + edgeLabel + '</li>';
         edgeFilterSelect.append(edgeHtml);
     }
     var filter = $('#filter');
     filter.show();
     $('#showFilters').on('click', toggleFilterMenu);
-    $('.filterCheckbox').on('click', filterSelected);
+
+    vertexFilters.find('.checkbox').on('click', elementSelected);
+    edgeFilters.find('.checkbox').on('click', elementSelected);
 }
 
 function toggleFilterMenu() {
-    var filterKeys = $('.filterKeys');
+    var vertexFilters = $('#vertexFilters');
+    var edgeFilters = $('#edgeFilters');
     if (this.checked) {
-        filterKeys.show();
+        vertexFilters.show();
+        edgeFilters.show();
     } else {
-        filterKeys.hide();
-        filterKeys.find('.multiSel').children().remove();
+        vertexFilters.hide();
+        vertexFilters.find('.multiSel').children().remove();
+        edgeFilters.hide();
+        edgeFilters.find('.multiSel').children().remove();
     }
 }
 
@@ -418,8 +443,6 @@ function toggleFilterMenu() {
  * @param keys array of vertex and edge keys
  */
 function initializePropertyKeyMenus(keys) {
-
-    var propertyKeys = $('.propertyKeys');
 
     //get the propertyKeys menus in their current form
     var vertexPropertyKeys = $("#vertexPropertyKeys");
@@ -430,8 +453,7 @@ function initializePropertyKeyMenus(keys) {
     var edgeSelect = edgePropertyKeys.find("dd .multiSelect ul").empty();
 
     var vertexLabelHtml = '' +
-        '<li><input type ="checkbox" value ="label" class="propertyCheckbox"/>' +
-        ' label</li>';
+        '<li><input type ="checkbox" value ="label" class="checkbox"/> label</li>';
 
     vertexSelect.append(vertexLabelHtml);
 
@@ -440,12 +462,12 @@ function initializePropertyKeyMenus(keys) {
         var propertyLabel = '&lt;' + vertexKey.labels + '&gt;.' + vertexKey.name;
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexKey.name + '" ' +
-            ' class="propertyCheckbox"/>' + propertyLabel + '</li>';
+            ' class="checkbox"/>' + propertyLabel + '</li>';
         vertexSelect.append(vertexHtml);
     }
 
     var edgeLabelHtml = '' +
-        '<li><input type ="checkbox" value ="label" class="propertyCheckbox"/>' +
+        '<li><input type ="checkbox" value ="label" class="checkbox"/>' +
         ' label</li>';
 
     edgeSelect.append(edgeLabelHtml);
@@ -454,22 +476,24 @@ function initializePropertyKeyMenus(keys) {
         var edgeKey = keys.edgeKeys[j];
         var edgeHtml =
             '<li><input type="checkbox" value="' + edgeKey.name + '" ' +
-            ' class="propertyCheckbox"/>&lt;' + edgeKey.labels + '&gt;.' + edgeKey.name + '</li>';
+            ' class="checkbox"/>&lt;' + edgeKey.labels + '&gt;.' + edgeKey.name + '</li>';
         edgeSelect.append(edgeHtml);
     }
 
     //show the propertyKeys menus
-    propertyKeys.show();
+    vertexPropertyKeys.show();
+    edgePropertyKeys.show()
 
     //remove the currently selected keys, they are saved in <span> elements
-    propertyKeys.find('.multiSel').children().remove();
+    vertexPropertyKeys.find('.multiSel').children().remove();
+    edgePropertyKeys.find('.multiSel').children().remove();
 
     //show instructions
-    propertyKeys.find('.instruction').show();
+    vertexPropertyKeys.find('.instruction').show();
+    edgePropertyKeys.find('.instruction').show();
 
-    $('.propertyCheckbox').on('click', keySelected);
-
-    //if the document is clicked anywhere else, close the propertyKeys menus
+    vertexPropertyKeys.find('.checkbox').on('click', elementSelected);
+    edgePropertyKeys.find('.checkbox').on('click', elementSelected);
 
 }
 
@@ -477,9 +501,9 @@ function initializePropertyKeyMenus(keys) {
  * function that is executed if a key is selected from any of the 2 propertyKeys boxes
  */
 
-function keySelected() {
-    var title = $(this).val() + ",";
-    var propertyKeys = $(this).closest('.propertyKeys');
+function elementSelected() {
+    var title = $(this).val();
+    var propertyKeys = $(this).closest('.dropDown');
 
     //if a key is selected, add it as a span to the title of the property keys box
     //else make the instruction visible
@@ -494,61 +518,84 @@ function keySelected() {
     }
 }
 
-function filterSelected() {
-    var title = $(this).val() + ",";
-    var filterKeys = $(this).closest('.filterKeys');
-
-    //if a key is selected, add it as a span to the title of the filter keys box
-    //else make the instruction visible
-    if ($(this).is(':checked')) {
-        var html = '<span title="' + title + '">' + title + '</span>';
-        filterKeys.find('.multiSel').append(html);
-        filterKeys.find('.instruction').hide();
-    } else {
-        var multiSel = filterKeys.find('.multiSel');
-        multiSel.find('span[title="' + title + '"]').remove();
-        if (multiSel.children().length == 0) filterKeys.find('.instruction').show();
-    }
-}
-
 /**
  * initialize the aggregate function propertyKeys menu
  */
-function initializeAggregateFunctionSelect(keys) {
+function initializeAggregateFunctionMenus(keys) {
+    var vertexAggrFuncs = $("#vertexAggrFuncs");
+    var edgeAggrFuncs = $("#edgeAggrFuncs");
 
-    var aggrFuncs = $('.aggrFuncs');
-    //remove all choices, except for the instruction one
-    $(aggrFuncs).find('option:not(:disabled)').remove();
+    //remove the current keys from the property key menus
+    var vertexSelect = vertexAggrFuncs.find("dd .multiSelect ul").empty();
+    var edgeSelect = edgeAggrFuncs.find("dd .multiSelect ul").empty();
 
-    aggrFuncs.show();
+    var vertexLabelHtml = '' +
+        '<li><input type ="checkbox" value ="count" class="checkbox"/> count</li>';
 
-    //add count by default
-    var countHtml = '<option value="count">count</option>';
-    aggrFuncs.append(countHtml);
+    vertexSelect.append(vertexLabelHtml);
 
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
-        if (vertexKey.numerical == true) {
-            var key = vertexKey.name;
-            var vertexAggrFuncs = $('#vertexAggrFuncs');
+        if(vertexKey.numerical == true ) {
+            var name = vertexKey.name;
+            var minHtml =
+                '<li><input type="checkbox" value="min ' + name +
+                '" class="checkbox"/>min ' + name + '</li>';
+            vertexSelect.append(minHtml);
 
-            vertexAggrFuncs.append('<option value="min ' + key + '">min ' + key + '</option>');
-            vertexAggrFuncs.append('<option value="max ' + key + '">max ' + key + '</option>');
-            vertexAggrFuncs.append('<option value="sum ' + key + '">sum ' + key + '</option>');
+            var maxHtml =
+                '<li><input type="checkbox" value="max ' + name +
+                '" class="checkbox"/>max ' + name + '</li>';
+            vertexSelect.append(maxHtml);
+
+            var sumHtml =
+                '<li><input type="checkbox" value="sum ' + name +
+                '" class="checkbox"/>sum ' + name + '</li>';
+            vertexSelect.append(sumHtml);
         }
     }
+
+
+
+    var edgeLabelHtml = '<li><input type ="checkbox" value ="count" class="checkbox"/>count</li>';
+
+    edgeSelect.append(edgeLabelHtml);
 
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
         if (edgeKey.numerical == true) {
-            var key = edgeKey.name;
-            var edgeAggrFuncs = $('#edgeAggrFuncs');
+            var name = edgeKey.name;
+            var minHtml =
+                '<li><input type="checkbox" value="min ' + name +
+                '" class="checkbox"/>min ' + name + '</li>';
+            edgeSelect.append(minHtml);
 
-            edgeAggrFuncs.append('<option value="min ' + key + '">min ' + key + '</option>');
-            edgeAggrFuncs.append('<option value="max ' + key + '">max ' + key + '</option>');
-            edgeAggrFuncs.append('<option value="sum ' + key + '">sum ' + key + '</option>');
+            var maxHtml =
+                '<li><input type="checkbox" value="max ' + name +
+                '" class="checkbox"/>max ' + name + '</li>';
+            edgeSelect.append(maxHtml);
+
+            var sumHtml =
+                '<li><input type="checkbox" value="sum ' + name +
+                '" class="checkbox"/>sum ' + name + '</li>';
+            edgeSelect.append(sumHtml);
         }
     }
+
+    //show the propertyKeys menus
+    vertexAggrFuncs.show();
+    edgeAggrFuncs.show()
+
+    //remove the currently selected keys, they are saved in <span> elements
+    vertexAggrFuncs.find('.multiSel').children().remove();
+    edgeAggrFuncs.find('.multiSel').children().remove();
+
+    //show instructions
+    vertexAggrFuncs.find('.instruction').show();
+    edgeAggrFuncs.find('.instruction').show();
+
+    vertexAggrFuncs.find('.checkbox').on('click', elementSelected);
+    edgeAggrFuncs.find('.checkbox').on('click', elementSelected);
 }
 
 /**
@@ -557,8 +604,7 @@ function initializeAggregateFunctionSelect(keys) {
 function hideElements() {
     $('#loading').hide();
     $('#filter').hide();
-    $('.filterKeys').hide();
-    $('.propertyKeys').hide();
+    $('.dropDown').hide();
     $('.aggrFuncs').hide();
 }
 
@@ -578,7 +624,7 @@ function getSelectedVertexKeys() {
     return $.map(
         $("#vertexPropertyKeys").find("dt a .multiSel span"),
         function (item) {
-            return $(item).text().slice(0, -1);
+            return $(item).text();
         });
 }
 
@@ -590,7 +636,7 @@ function getSelectedEdgeKeys() {
     return $.map(
         $("#edgePropertyKeys").find("dt a .multiSel span"),
         function (item) {
-            return $(item).text().slice(0, -1);
+            return $(item).text();
         });
 }
 
@@ -598,16 +644,24 @@ function getSelectedEdgeKeys() {
  * get the selected vertex aggregate function
  * @returns name of the selected vertex aggregate function
  */
-function getSelectedVertexAggregateFunction() {
-    return $("#vertexAggrFuncs").find("option:selected").text();
+function getSelectedVertexAggregateFunctions() {
+    return $.map(
+        $("#vertexAggrFuncs").find("dt a .multiSel span"),
+        function (item) {
+            return $(item).text();
+        });
 }
 
 /**
  * get the selected edge aggregate function
  * @returns name of the selected edge aggregate function
  */
-function getSelectedEdgeAggregateFunction() {
-    return $("#edgeAggrFuncs").find("option:selected").text();
+function getSelectedEdgeAggregateFunctions() {
+    return $.map(
+        $("#edgeAggrFuncs").find("dt a .multiSel span"),
+        function (item) {
+            return $(item).text();
+        });
 }
 
 
@@ -616,7 +670,7 @@ function getSelectedVertexFilters() {
         return $.map(
             $("#vertexFilters").find("dt a .multiSel span"),
             function (item) {
-                return $(item).text().slice(0, -1);
+                return $(item).text();
             });
     } else {
         return [];
@@ -628,7 +682,7 @@ function getSelectedEdgeFilters() {
         return $.map(
             $("#edgeFilters").find("dt a .multiSel span"),
             function (item) {
-                return $(item).text().slice(0, -1);
+                return $(item).text();
             });
 
     } else {
@@ -643,8 +697,5 @@ function getSelectedEdgeFilters() {
  */
 function isValidRequest(request) {
     return (request.dbName != "Select a database") &&
-        (request.vertexKeys.length > 0) &&
-        (request.edgeKeys.length > 0) &&
-        (request.vertexAggrFunc != "Select a vertex aggregate function") &&
-        (request.edgeAggrFunc != "Select an edge aggregate function");
+        (request.vertexKeys.length > 0);
 }

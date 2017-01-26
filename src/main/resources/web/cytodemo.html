@@ -31,7 +31,7 @@
         </label>
     </p>
 
-    <dl class="filterKeys" id="vertexFilters">
+    <dl class="dropDown" id="vertexFilters">
         <dt>
             <a href="#">
                 <span class="instruction">Select vertex label filters</span>
@@ -47,7 +47,7 @@
         </dd>
     </dl>
 
-    <dl class="filterKeys" id="edgeFilters">
+    <dl class="dropDown" id="edgeFilters">
         <dt>
             <a href="#">
                 <span class="instruction">Select edge label filters</span>
@@ -63,7 +63,7 @@
         </dd>
     </dl>
 
-    <dl class="propertyKeys" id="vertexPropertyKeys">
+    <dl class="dropDown" id="vertexPropertyKeys">
         <dt>
             <a href="#">
                 <span class="instruction">Select vertex grouping keys</span>
@@ -79,7 +79,7 @@
         </dd>
     </dl>
 
-    <dl class="propertyKeys" id="edgePropertyKeys">
+    <dl class="dropDown" id="edgePropertyKeys">
         <dt>
             <a href="#">
                 <span class="instruction">Select edge grouping keys</span>
@@ -95,16 +95,37 @@
         </dd>
     </dl>
 
-    <br>
-    <select class="aggrFuncs" id="vertexAggrFuncs">
-        <option selected disabled="true">Select a vertex aggregate function</option>
-    </select>
-    <br>
-    <br>
-    <select class="aggrFuncs" id="edgeAggrFuncs">
-        <option selected disabled="true">Select an edge aggregate function</option>
-    </select>
-    <br>
+    <dl class="dropDown" id="vertexAggrFuncs">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select vertex aggregation functions</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
+
+    <dl class="dropDown" id="edgeAggrFuncs">
+        <dt>
+            <a href="#">
+                <span class="instruction">Select edge aggregation functions</span>
+                <p class="multiSel"></p>
+            </a>
+        </dt>
+
+        <dd>
+            <div class="multiSelect">
+                <ul>
+                </ul>
+            </div>
+        </dd>
+    </dl>
 
     <button type="button" id="exec">Execute</button>
 </div>

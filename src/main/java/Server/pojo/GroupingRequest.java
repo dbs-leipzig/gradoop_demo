@@ -29,12 +29,12 @@ public class GroupingRequest {
   /**
    * vertex aggregation function
    */
-  private String vertexAggrFunc;
+  private String[] vertexAggrFuncs;
 
   /**
    * edge aggregation function
    */
-  private String edgeAggrFunc;
+  private String[] edgeAggrFuncs;
 
   /**
    * set the database name
@@ -66,19 +66,19 @@ public class GroupingRequest {
   /**
    * set the vertex aggregation function
    *
-   * @param vertexAggrFunc vertex aggregation function
+   * @param vertexAggrFuncs vertex aggregation function
    */
-  public void setVertexAggrFunc(String vertexAggrFunc) {
-    this.vertexAggrFunc = vertexAggrFunc;
+  public void setVertexAggrFuncs(String[] vertexAggrFuncs) {
+    this.vertexAggrFuncs = vertexAggrFuncs;
   }
 
   /**
    * set the edge aggregation function
    *
-   * @param edgeAggrFunc edge aggregation function
+   * @param edgeAggrFuncs edge aggregation function
    */
-  public void setEdgeAggrFunc(String edgeAggrFunc) {
-    this.edgeAggrFunc = edgeAggrFunc;
+  public void setEdgeAggrFuncs(String[] edgeAggrFuncs) {
+    this.edgeAggrFuncs = edgeAggrFuncs;
   }
 
   /**
@@ -113,8 +113,8 @@ public class GroupingRequest {
    *
    * @return vertex aggregation function
    */
-  public String getVertexAggrFunc() {
-    return vertexAggrFunc;
+  public String[] getVertexAggrFuncs() {
+    return vertexAggrFuncs;
   }
 
   /**
@@ -122,8 +122,8 @@ public class GroupingRequest {
    *
    * @return edge aggregation function
    */
-  public String getEdgeAggrFunc() {
-    return edgeAggrFunc;
+  public String[] getEdgeAggrFuncs() {
+    return edgeAggrFuncs;
   }
 
   /**
@@ -137,8 +137,8 @@ public class GroupingRequest {
       "DB name: " + dbName + "\n" +
       "Vertex keys: " + Arrays.toString(vertexKeys) + "\n" +
       "Edge keys: " + Arrays.toString(edgeKeys) + "\n" +
-      "Vertex aggrFunc: " + vertexAggrFunc + "\n" +
-      "Edge aggrFunc: " + edgeAggrFunc + "\n" +
+      "Vertex aggrFunc: " + vertexAggrFuncs + "\n" +
+      "Edge aggrFunc: " + edgeAggrFuncs + "\n" +
       "Vertex filters: " + Arrays.toString(vertexFilters) + "\n" +
       "Edge filters: " + Arrays.toString(edgeFilters) + "\n";
 
