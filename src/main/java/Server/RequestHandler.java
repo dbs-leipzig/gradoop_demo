@@ -7,10 +7,9 @@ import Server.functions.LabelGroupReducer;
 import Server.functions.LabelMapper;
 import Server.functions.LabelReducer;
 import Server.functions.PropertyKeyMapper;
-import Server.functions.MergeToSet;
+import Server.functions.MergeSets;
 import Server.pojo.GroupingRequest;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.logging.Log;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.LocalCollectionOutputFormat;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -21,7 +20,6 @@ import org.gradoop.common.model.impl.id.GradoopId;
 import org.gradoop.common.model.impl.pojo.Edge;
 import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
-import org.gradoop.flink.io.impl.json.JSONDataSink;
 import org.gradoop.flink.io.impl.json.JSONDataSource;
 import org.gradoop.flink.model.impl.GraphCollection;
 import org.gradoop.flink.model.impl.LogicalGraph;
@@ -39,13 +37,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -184,19 +178,17 @@ public class RequestHandler {
    */
   private JSONArray getVertexKeys(LogicalGraph graph) throws Exception {
 
-    Set<Tuple3<String, String, Boolean>> vertexKeys = graph.getVertices()
+    List<Tuple3<Set<String>, String, Boolean>> vertexKeys = graph.getVertices()
       .flatMap(new PropertyKeyMapper<Vertex>())
       .groupBy(1)
       .reduceGroup(new LabelGroupReducer())
-      .reduce(new MergeToSet<Tuple3<String, String, Boolean>>())
-      .collect()
-      .get(0);
+      .collect();
 
     return buildArrayFromKeys(vertexKeys);
   }
 
   /**
-   * Takes any given graph and reates a JSONArray containing the edge property keys and a boolean,
+   * Takes any given graph and creates a JSONArray containing the edge property keys and a boolean,
    * specifying it the property has a numerical type.
    * @param graph input graph
    * @return  JSON array with property keys and boolean, that is true if the property type is
@@ -205,13 +197,11 @@ public class RequestHandler {
    */
   private JSONArray getEdgeKeys(LogicalGraph graph) throws Exception {
 
-    Set<Tuple3<String, String, Boolean>> edgeKeys = graph.getEdges()
+    List<Tuple3<Set<String>, String, Boolean>> edgeKeys = graph.getEdges()
       .flatMap(new PropertyKeyMapper<Edge>())
       .groupBy(1)
       .reduceGroup(new LabelGroupReducer())
-      .reduce(new MergeToSet<Tuple3<String, String, Boolean>>())
-      .collect()
-      .get(0);
+      .collect();
 
     return buildArrayFromKeys(edgeKeys);
   }
@@ -225,12 +215,16 @@ public class RequestHandler {
    * @return JSONArray containing the same data as the input
    * @throws JSONException if the construction of the JSON fails
    */
-  private JSONArray buildArrayFromKeys(Set<Tuple3<String, String, Boolean>> keys)
+  private JSONArray buildArrayFromKeys(List<Tuple3<Set<String>, String, Boolean>> keys)
     throws JSONException {
     JSONArray keyArray = new JSONArray();
-    for(Tuple3<String, String, Boolean> key : keys) {
+    for(Tuple3<Set<String>, String, Boolean> key : keys) {
       JSONObject keyObject = new JSONObject();
-      keyObject.put("labels", key.f0);
+      JSONArray labels = new JSONArray();
+      for(String label : key.f0) {
+        labels.put(label);
+      }
+      keyObject.put("labels", labels);
       keyObject.put("name", key.f1);
       keyObject.put("numerical", key.f2);
       keyArray.put(keyObject);

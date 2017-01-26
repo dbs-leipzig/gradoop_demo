@@ -1,3 +1,5 @@
+var vertexFilterMap = {};
+var edgeFilterMap = {};
 $(document).ready(function () {
 
     //hide everything that is invisible at the beginning
@@ -46,7 +48,6 @@ $(document).ready(function () {
 });
 
 function showGraph(data) {
-
 
     //hide the loading gif
     $('#loading').hide();
@@ -330,26 +331,10 @@ function initializeDatabaseMenu(databases) {
     databaseSelect.children().on('click', sendKeyRequest);
 
     //on click, the dropdown menus open, this has to be done here so it is done only once
-    $('#vertexFilters').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
-    });
-    $('#edgeFilters').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
+    $('.dropDown').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find('ul').slideToggle('fast');
     });
 
-    $('#vertexPropertyKeys').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
-    });
-    $('#edgePropertyKeys').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
-    });
-
-    $('#vertexAggrFuncs').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
-    });
-    $('#edgeAggrFuncs').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find("ul").slideToggle('fast');
-    });
     $(document).bind('click', function (e) {
         var $clicked = $(e.target);
         if (!$clicked.parents("#vertexPropertyKeys").length)
@@ -421,7 +406,9 @@ function initializeFilterKeyMenus(keys) {
     $('#showFilters').on('click', toggleFilterMenu);
 
     vertexFilters.find('.checkbox').on('click', elementSelected);
+    //vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
     edgeFilters.find('.checkbox').on('click', elementSelected);
+    //edgeFilters.find('.checkbox').on('click', edgeFilterSelected);
 }
 
 function toggleFilterMenu() {
@@ -459,7 +446,16 @@ function initializePropertyKeyMenus(keys) {
 
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
-        var propertyLabel = '&lt;' + vertexKey.labels + '&gt;.' + vertexKey.name;
+        var propertyLabel = '&lt;';
+        //insert an entry into the vertex filter map
+        createVertexFilterMapEntry(vertexKey);
+        for (var j = 0; j < vertexKey.labels.length; j++) {
+            propertyLabel += vertexKey.labels[j];
+            if (j < vertexKey.labels.length - 1) {
+                propertyLabel += ", ";
+            }
+        }
+        propertyLabel += '&gt;.' + vertexKey.name;
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexKey.name + '" ' +
             ' class="checkbox"/>' + propertyLabel + '</li>';
@@ -472,11 +468,24 @@ function initializePropertyKeyMenus(keys) {
 
     edgeSelect.append(edgeLabelHtml);
 
-    for (var j = 0; j < keys.edgeKeys.length; j++) {
-        var edgeKey = keys.edgeKeys[j];
+    for (var i = 0; i < keys.edgeKeys.length; i++) {
+        var edgeKey = keys.edgeKeys[i];
+        var propertyLabel = '&lt;';
+        //insert an entry into the edge filter map
+        createEdgeFilterMapEntry(edgeKey);
+        for (var j = 0; j < edgeKey.labels.length; j++) {
+            propertyLabel += edgeKey.labels[j];
+            if (j < edgeKey.labels.length - 1) {
+                propertyLabel += ", ";
+            }
+
+            //insert an entry into the filter map
+
+        }
+        propertyLabel += '&gt;.' + edgeKey.name;
         var edgeHtml =
             '<li><input type="checkbox" value="' + edgeKey.name + '" ' +
-            ' class="checkbox"/>&lt;' + edgeKey.labels + '&gt;.' + edgeKey.name + '</li>';
+            ' class="checkbox"/>' + propertyLabel + '</li>';
         edgeSelect.append(edgeHtml);
     }
 
@@ -495,6 +504,34 @@ function initializePropertyKeyMenus(keys) {
     vertexPropertyKeys.find('.checkbox').on('click', elementSelected);
     edgePropertyKeys.find('.checkbox').on('click', elementSelected);
 
+}
+
+function createVertexFilterMapEntry(vertexKey) {
+
+    var vertexKeyObject = {};
+
+    vertexKeyObject.name = vertexKey.name;
+    vertexKeyObject.support = 0;
+
+    for(var i=0;i<vertexKey.labels.length;i++) {
+        var label = vertexKey.labels[i];
+        vertexKeyObject.support++;
+        vertexFilterMap[label] = vertexKeyObject;
+    }
+}
+
+function createEdgeFilterMapEntry(edgeKey) {
+
+    var edgeKeyObject = {};
+
+    edgeKeyObject.name = edgeKey.name;
+    edgeKeyObject.support = 0;
+
+    for(var i=0;i<edgeKey.labels.length;i++) {
+        var label = edgeKey.labels[i];
+        edgeKeyObject.support++;
+        edgeFilterMap[label] = edgeKeyObject;
+    }
 }
 
 /**
@@ -517,6 +554,28 @@ function elementSelected() {
         if (multiSel.children().length == 0) propertyKeys.find('.instruction').show();
     }
 }
+/*
+// function to hide properties of filtered elements
+
+function vertexFilterSelected() {
+    var filters = $(this).parent().find('input:checked');
+    if(filters.length > 0) {
+        var vertexCheckboxes = $('#vertexPropertyKeys').find('dd .multiSelect ul li');
+        vertexCheckboxes.hide();
+        for(var i=0;i<filters.length;i++) {
+
+        }
+    }
+
+
+
+
+    if($(this).is(':checked')) {
+
+    } else {
+
+    }
+}*/
 
 /**
  * initialize the aggregate function propertyKeys menu
@@ -536,7 +595,7 @@ function initializeAggregateFunctionMenus(keys) {
 
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
-        if(vertexKey.numerical == true ) {
+        if (vertexKey.numerical == true) {
             var name = vertexKey.name;
             var minHtml =
                 '<li><input type="checkbox" value="min ' + name +
@@ -554,7 +613,6 @@ function initializeAggregateFunctionMenus(keys) {
             vertexSelect.append(sumHtml);
         }
     }
-
 
 
     var edgeLabelHtml = '<li><input type ="checkbox" value ="count" class="checkbox"/>count</li>';
