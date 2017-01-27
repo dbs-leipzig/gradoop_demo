@@ -1,9 +1,12 @@
 var vertexFilterMap = {};
 var edgeFilterMap = {};
+
 $(document).ready(function () {
 
     //hide everything that is invisible at the beginning
     hideElements();
+    //reset the webpage on reload, this is to keep the browser from trying to keep the current state
+    resetPage();
 
     //get the available databases from the server
     //if the request is a success, add them to the database propertyKeys menu
@@ -383,27 +386,43 @@ function initializeFilterKeyMenus(keys) {
     var vertexFilters = $('#vertexFilters');
     var edgeFilters = $('#edgeFilters');
 
+    vertexFilters.find('.multiSel').children().remove();
+    edgeFilters.find('.multiSel').children().remove();
+
     var vertexFilterSelect = vertexFilters.find("dd .multiSelect ul").empty();
     var edgeFilterSelect = edgeFilters.find("dd .multiSelect ul").empty();
 
     for (var i = 0; i < keys.vertexLabels.length; i++) {
         var vertexLabel = keys.vertexLabels[i];
-        var vertexHtml =
-            '<li><input type="checkbox" value="' + vertexLabel + '" ' +
-            ' class="checkbox"/>' + vertexLabel + '</li>';
-        vertexFilterSelect.append(vertexHtml);
+
+        vertexFilterSelect.append(
+            '<li><input type="checkbox" value="' + vertexLabel + '"' +
+            ' class="checkbox" checked=true/>' + vertexLabel + '</li>');
+
+        vertexFilters.find('.multiSel').append(
+            '<span title="' + vertexLabel + '">' + vertexLabel + '</span>');
     }
+
+
+    vertexFilters.find('.instruction').hide();
 
     for (var i = 0; i < keys.edgeLabels.length; i++) {
         var edgeLabel = keys.edgeLabels[i];
-        var edgeHtml =
-            '<li><input type="checkbox" value="' + edgeLabel + '" ' +
-            ' class="checkbox"/>' + edgeLabel + '</li>';
-        edgeFilterSelect.append(edgeHtml);
+        
+        edgeFilterSelect.append(
+            '<li><input type="checkbox" value="' + edgeLabel + '"' +
+            ' class="checkbox" checked=true/>' + edgeLabel + '</li>');
+
+        edgeFilters.find('.multiSel').append(
+            '<span title="' + edgeLabel + '">' + edgeLabel + '</span>');
     }
+
+    edgeFilters.find('.instruction').hide();
+
     var filter = $('#filter');
     filter.show();
     $('#showFilters').on('click', toggleFilterMenu);
+
 
     vertexFilters.find('.checkbox').on('click', elementSelected);
     //vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
@@ -419,9 +438,7 @@ function toggleFilterMenu() {
         edgeFilters.show();
     } else {
         vertexFilters.hide();
-        vertexFilters.find('.multiSel').children().remove();
         edgeFilters.hide();
-        edgeFilters.find('.multiSel').children().remove();
     }
 }
 
@@ -478,9 +495,6 @@ function initializePropertyKeyMenus(keys) {
             if (j < edgeKey.labels.length - 1) {
                 propertyLabel += ", ";
             }
-
-            //insert an entry into the filter map
-
         }
         propertyLabel += '&gt;.' + edgeKey.name;
         var edgeHtml =
@@ -491,7 +505,7 @@ function initializePropertyKeyMenus(keys) {
 
     //show the propertyKeys menus
     vertexPropertyKeys.show();
-    edgePropertyKeys.show()
+    edgePropertyKeys.show();
 
     //remove the currently selected keys, they are saved in <span> elements
     vertexPropertyKeys.find('.multiSel').children().remove();
@@ -756,4 +770,9 @@ function getSelectedEdgeFilters() {
 function isValidRequest(request) {
     return (request.dbName != "Select a database") &&
         (request.vertexKeys.length > 0);
+}
+
+function resetPage() {
+    $('#showFilters').prop("checked", false);
+    $("#databases").val("default");
 }
