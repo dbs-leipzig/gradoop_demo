@@ -80,7 +80,7 @@ button {
     position: absolute;
     width: 60%;
     height: 100%;
-    background: url('grouping/spinner.gif') no-repeat center center;
+    background: url('spinner.gif') no-repeat center center;
     background-size: 160px 120px;
 }
 
