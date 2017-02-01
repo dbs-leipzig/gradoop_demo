@@ -1,24 +1,28 @@
 /*
-* This file is part of Gradoop.
-*
-* Gradoop is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* Gradoop is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Gradoop.
+ *
+ * Gradoop is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Gradoop is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
+ */
 var aggrPrefixes = ["min ", "max ", "sum "];
 
 var vertexFilterMap = {};
 var edgeFilterMap = {};
 
+var vertexLabelKey;
+var edgeLabelKey;
+
+var colorMap = {};
 
 $(document).ready(function () {
 
@@ -29,11 +33,25 @@ $(document).ready(function () {
 
     //get the available databases from the org.gradoop.demos.grouping.server
     //if the request is a success, add them to the database propertyKeys menu
-    $.get("http://localhost:9998/databases/")
+    $.get("http://localhost:2342/databases/")
         .done(initializeDatabaseMenu)
         .fail(function (jqXHR, textStatus, errorThrown) {
             alert(errorThrown);
         });
+
+    $("#wholeGraph").bind("click", function () {
+
+        $("#loading").show();
+        var databaseName = getSelectedDatabase();
+        $.post("http://localhost:2342/graph/" + databaseName)
+            .done(function (data) {
+                showGraph(data, true);
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                alert(errorThrown);
+            });
+
+    });
 
 
     $("#exec").bind("click", function () {
@@ -50,174 +68,203 @@ $(document).ready(function () {
 
         if (isValidRequest(request)) {
             //Show a loading gif
-            $('#loading').show();
+            $("#loading").show();
 
             //Send a POST request to the org.gradoop.demos.grouping.server
 
             $.ajax({
-                url: 'http://localhost:9998/data/',
-                datatype: 'text',
+                url: "http://localhost:2342/data/",
+                datatype: "text",
                 type: "post",
                 contentType: "application/json",
                 data: JSON.stringify(request),
-                success: showGraph
+                success: function (data) {
+                    showGraph(data, false);
+                }
             });
         } else {
             alert("Not a valid request.");
         }
-
     });
 });
 
-function showGraph(data) {
+function showGraph(data, defaultLabel) {
+
+    var vertices = data["nodes"];
+    var labels = new Set();
+    for (var i = 0; i < vertices.length; i++) {
+        var vertex = vertices[i];
+        labels.add(vertex["data"]["label"]);
+    }
+    generateRandomColors(labels);
 
     //hide the loading gif
-    $('#loading').hide();
+    $("#loading").hide();
 
     //get data from the servers response
     var nodes = data.nodes;
     var edges = data.edges;
 
     //update vertex and edge count
-    var rows = '';
-    rows += '<tr><td>Vertex Count</td><td>:</td><td>'
-        + nodes.length + '</td></tr>';
-    rows += '<tr><td>Edge Count</td><td>:</td><td>'
-        + edges.length + '</td></tr>';
-    $('#stats').html(rows);
+    var rows = "";
+    rows += "<tr><td>Vertex Count</td><td>:</td><td>"
+        + nodes.length + "</td></tr>";
+    rows += "<tr><td>Edge Count</td><td>:</td><td>"
+        + edges.length + "</td></tr>";
+    $("#stats").html(rows);
     //start cytoscape
     $(function () {
         cytoscape({
-            container: document.getElementById('canvas'),
+            container: document.getElementById("canvas"),
             style: cytoscape.stylesheet()
-                .selector('node')
+                .selector("node")
                 .css({
 
                     //define label content and font
-                    'content': function (node) {
-                        var labelString = '';
-                        labelString += node.data('label') + " ";
-                        var properties = node.data('properties');
+                    "content": function (node) {
+
+                        var labelString = "";
+                        if (!defaultLabel && vertexLabelKey != "label") {
+                            labelString += node.data("properties")[vertexLabelKey] + " ";
+                        } else {
+                            labelString += node.data("label") + " ";
+                        }
+
+
+                        var properties = node.data("properties");
 
                         var aggregate = null;
 
-                        if (properties['count'] != null) {
-                            aggregate = properties['count'];
-                        } else if (properties['min'] != null) {
-                            aggregate = properties['min'];
-                        } else if (properties['max'] != null) {
-                            aggregate = properties['max'];
-                        } else if (properties['sum'] != null) {
-                            aggregate = properties['sum'];
+                        if (properties["count"] != null) {
+                            aggregate = properties["count"];
+                        } else if (properties["min"] != null) {
+                            aggregate = properties["min"];
+                        } else if (properties["max"] != null) {
+                            aggregate = properties["max"];
+                        } else if (properties["sum"] != null) {
+                            aggregate = properties["sum"];
                         }
 
                         if (aggregate != null) {
                             for (var property in properties) {
-                                var key = "" + property;
-                                if (!($.inArray(key, ['count', 'min', 'max', 'sum']) > -1)) {
+                                var key = property;
+                                if (!($.inArray(key, ["count", "min", "max", "sum"]) > -1)) {
                                     var value = properties[key];
-                                    if (value != '__NULL') {
+                                    if (value != "__NULL") {
                                         labelString += properties[key] + " ";
                                     }
                                 }
                             }
-                            labelString += '(' + aggregate + ')';
+                            labelString += "(" + aggregate + ")";
                         }
 
                         return labelString;
                     },
 
-                    'text-valign': 'center',
-                    'color': 'black',
-                    'background-color': '#ADD8E6',
+                    "text-valign": "center",
+                    "color": "black",
+                    "background-color": function(node) {
+                        var color = colorMap[node.data("label")];
+                        var result = "#";
+                        result += ("0" + color[0].toString(16)).substr(-2);
+                        result += ("0" + color[1].toString(16)).substr(-2);
+                        result += ("0" + color[2].toString(16)).substr(-2);
+                        return result;
+                    },
 
                     //size of nodes is determined by property count
                     //count specifies that the node stands for
                     //1 or more other nodes
-                    'width': function (node) {
-                        var count = node.data('properties')['count'];
+                    "width": function (node) {
+                        var count = node.data("properties")["count"];
                         if (count != null) {
                             //surface of nodes is proportional to count
-                            return Math.sqrt(count * 10000 / Math.PI) + 'px';
+                            return Math.sqrt(count * 10000 / Math.PI) + "px";
                         }
                         else {
-                            return '60px';
+                            return "60px";
                         }
                     },
 
-                    'height': function (node) {
-                        var count = node.data('properties')['count'];
+                    "height": function (node) {
+                        var count = node.data("properties")["count"];
                         if (count != null) {
-                            return Math.sqrt(count * 10000 / Math.PI) + 'px';
+                            return Math.sqrt(count * 10000 / Math.PI) + "px";
                         }
                         else {
-                            return '60px';
+                            return "60px";
                         }
                     },
-                    'text-wrap': 'wrap'
+                    "text-wrap": "wrap"
                 })
-                .selector('edge')
+                .selector("edge")
                 .css({
                     //layout of edge and edge label
-                    'content': function (edge) {
+                    "content": function (edge) {
 
-                        //at the moment, edge labels are too noisy to be useful
-                        return "";
+                        if (!$("#showEdgeLabels").is(":checked")) {
+                            return "";
+                        }
 
-                        var labelString = '';
-                        labelString += edge.data('label') + " ";
-                        var properties = edge.data('properties');
+                        var labelString = "";
+                        if (!defaultLabel && vertexLabelKey != "label") {
+                            labelString += edge.data("properties")[vertexLabelKey] + " ";
+                        } else {
+                            labelString += edge.data("label") + " ";
+                        }
+
+                        var properties = edge.data("properties");
 
                         var aggregate = null;
 
-                        if (properties['count'] != null) {
-                            aggregate = properties['count'];
-                        } else if (properties['min'] != null) {
-                            aggregate = properties['min'];
-                        } else if (properties['max'] != null) {
-                            aggregate = properties['max'];
-                        } else if (properties['sum'] != null) {
-                            aggregate = properties['sum'];
+                        if (properties["count"] != null) {
+                            aggregate = properties["count"];
+                        } else if (properties["min"] != null) {
+                            aggregate = properties["min"];
+                        } else if (properties["max"] != null) {
+                            aggregate = properties["max"];
+                        } else if (properties["sum"] != null) {
+                            aggregate = properties["sum"];
                         }
 
                         if (aggregate != null) {
                             for (var property in properties) {
                                 var key = "" + property;
-                                if (!($.inArray(key, ['count', 'min', 'max', 'sum']) > -1)) {
+                                if (!($.inArray(key, ["count", "min", "max", "sum"]) > -1)) {
                                     var value = properties[key];
-                                    if (value != '__NULL') {
+                                    if (value != "__NULL") {
                                         labelString += properties[key] + " ";
                                     }
                                 }
                             }
-                            labelString += '(' + aggregate + ')';
+                            labelString += "(" + aggregate + ")";
                         }
 
                         return labelString;
                     },
-                    'line-color': '#999',
-                    'stroke-width': 2,
-                    'target-arrow-shape': 'triangle',
-                    'target-arrow-color': '#000'
+                    "line-color": "#999",
+                    "stroke-width": 2,
+                    "target-arrow-shape": "triangle",
+                    "target-arrow-color": "#000"
                 })
                 //properties of edges and nodes in special states
                 //e.g. invisible or faded
-                .selector(':selected')
+                .selector(":selected")
                 .css({
-                    'background-color': 'black',
-                    'line-color': 'black',
-                    'target-arrow-color': 'black',
-                    'source-arrow-color': 'black'
+                    "background-color": "black",
+                    "line-color": "black",
+                    "target-arrow-color": "black",
+                    "source-arrow-color": "black"
                 })
-                .selector('.faded')
+                .selector(".faded")
                 .css({
-                    'opacity': 0.25,
-                    'text-opacity': 0
+                    "opacity": 0.25,
+                    "text-opacity": 0
                 })
-                .selector('.invisible')
+                .selector(".invisible")
                 .css({
-                    'opacity': 0,
-                    'text-opacity': 0
+                    "opacity": 0,
+                    "text-opacity": 0
                 }),
             elements: {
                 nodes: nodes,
@@ -229,47 +276,47 @@ function showGraph(data) {
                 cy.elements().unselectify();
                 //if a node is selected, fade all edges and nodes
                 //that are not in direct neighborhood of the node
-                cy.on('tap', 'node', function (e) {
+                cy.on("tap", "node", function (e) {
                     var node = e.cyTarget;
                     var neighborhood = node.neighborhood().add(node);
 
-                    cy.elements().addClass('faded');
-                    neighborhood.removeClass('faded');
+                    cy.elements().addClass("faded");
+                    neighborhood.removeClass("faded");
                 });
                 //remove fading by clicking somewhere else
-                cy.on('tap', function (e) {
+                cy.on("tap", function (e) {
 
                     if (e.cyTarget === cy) {
-                        cy.elements().removeClass('faded');
+                        cy.elements().removeClass("faded");
                     }
                 });
                 //add a property box whenever a node or edge is
                 //selected
                 cy.elements().qtip({
                     content: function () {
-                        var qtipText = '';
+                        var qtipText = "";
                         for (var key in this.data()) {
-                            if (key != 'properties' && key != 'pie_parameters') {
-                                qtipText += key + " : " + this.data(key) + '<br>';
+                            if (key != "properties" && key != "pie_parameters") {
+                                qtipText += key + " : " + this.data(key) + "<br>";
                             }
                         }
-                        var properties = this.data('properties');
+                        var properties = this.data("properties");
                         for (var property in properties) {
-                            qtipText += property + " : " + properties[property] + '<br>';
+                            qtipText += property + " : " + properties[property] + "<br>";
                         }
                         return qtipText;
                     },
                     position: {
-                        my: 'top center',
-                        at: 'bottom center'
+                        my: "top center",
+                        at: "bottom center"
                     },
                     style: {
-                        classes: 'MyQtip'
+                        classes: "MyQtip"
                     }
                 });
                 //options for the force layout
                 var options = {
-                    name: 'cose',
+                    name: "cose",
 
                     //called on `layoutready`
                     ready: function () {
@@ -350,14 +397,14 @@ function initializeDatabaseMenu(databases) {
         var name = databases[i];
         databaseSelect.append('<option value="' + name + '">' + name + '</option>');
     }
-    databaseSelect.children().on('click', sendKeyRequest);
+    databaseSelect.children().on("click", sendKeyRequest);
 
     //on click, the dropdown menus open, this has to be done here so it is done only once
-    $('.dropDown').find('dt a').on('click', function () {
-        $(this).closest('.dropDown').find('ul').slideToggle('fast');
+    $(".dropDown").find("dt a").on("click", function () {
+        $(this).closest(".dropDown").find("ul").slideToggle("fast");
     });
 
-    $(document).bind('click', function (e) {
+    $(document).bind("click", function (e) {
         var $clicked = $(e.target);
         if (!$clicked.parents("#vertexPropertyKeys").length)
             $("#vertexPropertyKeys").find("dd ul").hide();
@@ -381,7 +428,7 @@ function initializeDatabaseMenu(databases) {
 function sendKeyRequest() {
     var databaseName = getSelectedDatabase();
     if (databaseName != "Select a database") {
-        $.post("http://localhost:9998/keys/" + databaseName)
+        $.post("http://localhost:2342/keys/" + databaseName)
             .done(initializeOtherMenus)
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -395,6 +442,9 @@ function sendKeyRequest() {
  * @param keys
  */
 function initializeOtherMenus(keys) {
+    $("#exec").show();
+    $("#wholeGraph").show();
+    $(".show").show();
     initializeFilterKeyMenus(keys);
     initializePropertyKeyMenus(keys);
     initializeAggregateFunctionMenus(keys);
@@ -402,11 +452,11 @@ function initializeOtherMenus(keys) {
 
 function initializeFilterKeyMenus(keys) {
 
-    var vertexFilters = $('#vertexFilters');
-    var edgeFilters = $('#edgeFilters');
+    var vertexFilters = $("#vertexFilters");
+    var edgeFilters = $("#edgeFilters");
 
-    vertexFilters.find('.multiSel').children().remove();
-    edgeFilters.find('.multiSel').children().remove();
+    vertexFilters.find(".multiSel").children().remove();
+    edgeFilters.find(".multiSel").children().remove();
 
     var vertexFilterSelect = vertexFilters.find("dd .multiSelect ul").empty();
     var edgeFilterSelect = edgeFilters.find("dd .multiSelect ul").empty();
@@ -436,22 +486,22 @@ function initializeFilterKeyMenus(keys) {
             '<span title="' + edgeLabel + '">' + edgeLabel + '</span>');
     }
 
-    edgeFilters.find('.instruction').hide();
+    edgeFilters.find(".instruction").hide();
 
-    var filter = $('#filter');
+    var filter = $(".show");
     filter.show();
-    $('#showFilters').on('click', toggleFilterMenu);
+    $("#showFilters").on("click", toggleFilterMenu);
 
 
-    vertexFilters.find('.checkbox').on('click', elementSelected);
-    vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
-    edgeFilters.find('.checkbox').on('click', elementSelected);
-    edgeFilters.find('.checkbox').on('click', edgeFilterSelected);
+    vertexFilters.find(".checkbox").on("click", elementSelected);
+    vertexFilters.find(".checkbox").on("click", vertexFilterSelected);
+    edgeFilters.find(".checkbox").on("click", elementSelected);
+    edgeFilters.find(".checkbox").on("click", edgeFilterSelected);
 }
 
 function toggleFilterMenu() {
-    var vertexFilters = $('#vertexFilters');
-    var edgeFilters = $('#edgeFilters');
+    var vertexFilters = $("#vertexFilters");
+    var edgeFilters = $("#edgeFilters");
     if (this.checked) {
         vertexFilters.show();
         edgeFilters.show();
@@ -475,14 +525,14 @@ function initializePropertyKeyMenus(keys) {
     var vertexSelect = vertexPropertyKeys.find("dd .multiSelect ul").empty();
     var edgeSelect = edgePropertyKeys.find("dd .multiSelect ul").empty();
 
-    var vertexLabelHtml = '' +
+    var vertexLabelHtml = "" +
         '<li><input type ="checkbox" value ="label" class="checkbox"/> label</li>';
 
     vertexSelect.append(vertexLabelHtml);
 
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
-        var propertyLabel = '&lt;';
+        var propertyLabel = "&lt;";
         //insert an entry into the vertex filter map
         createVertexFilterMapEntry(vertexKey);
         for (var j = 0; j < vertexKey.labels.length; j++) {
@@ -491,7 +541,7 @@ function initializePropertyKeyMenus(keys) {
                 propertyLabel += ", ";
             }
         }
-        propertyLabel += '&gt;.' + vertexKey.name;
+        propertyLabel += "&gt;." + vertexKey.name;
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexKey.name + '" ' +
             ' class="checkbox"/>' + propertyLabel + '</li>';
@@ -499,8 +549,7 @@ function initializePropertyKeyMenus(keys) {
     }
 
     var edgeLabelHtml = '' +
-        '<li><input type ="checkbox" value ="label" class="checkbox"/>' +
-        ' label</li>';
+        '<li><input type ="checkbox" value ="label" class="checkbox"/> label</li>';
 
     edgeSelect.append(edgeLabelHtml);
 
@@ -535,7 +584,9 @@ function initializePropertyKeyMenus(keys) {
     edgePropertyKeys.find('.instruction').show();
 
     vertexPropertyKeys.find('.checkbox').on('click', elementSelected);
+    vertexPropertyKeys.find('.checkbox').on('click', setVertexLabel);
     edgePropertyKeys.find('.checkbox').on('click', elementSelected);
+    edgePropertyKeys.find('.checkbox').on('click', setEdgeLabel);
 
 }
 
@@ -598,6 +649,24 @@ function elementSelected() {
         multiSel.find('span[title="' + title + '"]').remove();
         if (multiSel.children().length == 0) propertyKeys.find('.instruction').show();
     }
+}
+
+function setVertexLabel() {
+    var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
+    selectedLabels.each(function () {
+        $(this).css("font-weight", "normal");
+    });
+    selectedLabels.first().css("font-weight", "bold");
+    vertexLabelKey = selectedLabels.first().text();
+}
+
+function setEdgeLabel() {
+    var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
+    selectedLabels.each(function () {
+        $(this).css("font-weight", "normal");
+    });
+    selectedLabels.first().css("font-weight", "bold");
+    edgeLabelKey = selectedLabels.first().text();
 }
 
 // function to hide properties of filtered elements
@@ -671,10 +740,10 @@ function edgeFilterSelected() {
 
 function enablePropertyKey(dropdown, keyObject) {
     var name = keyObject.name;
-    var checkbox =  $(dropdown)
+    var checkbox = $(dropdown)
         .find('dd .multiSelect ul li input[value = "' + name + '"]')
         .attr('disabled', false);
-    checkbox.parent().css('color','black');
+    checkbox.parent().css('color', 'black');
 
 }
 
@@ -683,11 +752,11 @@ function disablePropertyKey(dropdown, keyObject) {
     var propertyDropdown = $(dropdown);
 
     var name = keyObject.name;
-    var checkbox =  propertyDropdown
+    var checkbox = propertyDropdown
         .find('dd .multiSelect ul li input[value = "' + name + '"]')
         .attr('disabled', true);
     checkbox.attr('checked', false);
-    checkbox.parent().css('color','grey');
+    checkbox.parent().css('color', 'grey');
 
     propertyDropdown.find('span[title="' + name + '"]').remove();
 
@@ -699,12 +768,12 @@ function disablePropertyKey(dropdown, keyObject) {
 
 function enableAggrFunc(dropdown, keyObject) {
     var name = keyObject.name;
-    for(var i=0;i<aggrPrefixes.length;i++) {
+    for (var i = 0; i < aggrPrefixes.length; i++) {
         var aggrName = aggrPrefixes[i] + name;
-        var checkbox =  $(dropdown)
+        var checkbox = $(dropdown)
             .find('dd .multiSelect ul li input[value = "' + aggrName + '"]')
             .attr('disabled', false);
-        checkbox.parent().css('color','black');
+        checkbox.parent().css('color', 'black');
     }
 }
 
@@ -714,7 +783,7 @@ function disableAggrFunc(dropdown, keyObject) {
 
     var name = keyObject.name;
 
-    for(var i=0;i<aggrPrefixes.length;i++) {
+    for (var i = 0; i < aggrPrefixes.length; i++) {
 
         var aggrName = aggrPrefixes[i] + name;
 
@@ -751,7 +820,7 @@ function initializeAggregateFunctionMenus(keys) {
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
         if (vertexKey.numerical == true) {
-            for(var j=0;j<aggrPrefixes.length;j++) {
+            for (var j = 0; j < aggrPrefixes.length; j++) {
                 var aggrFunc = aggrPrefixes[j] + vertexKey.name;
                 var html = '<li><input type="checkbox" value="' + aggrFunc +
                     '" class="checkbox"/>' + aggrFunc + '</li>';
@@ -768,7 +837,7 @@ function initializeAggregateFunctionMenus(keys) {
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
         if (edgeKey.numerical == true) {
-            for(var j=0;j<aggrPrefixes.length;j++) {
+            for (var j = 0; j < aggrPrefixes.length; j++) {
                 var aggrFunc = aggrPrefixes[j] + edgeKey.name;
                 var html = '<li><input type="checkbox" value="' + aggrFunc +
                     '" class="checkbox"/>' + aggrFunc + '</li>';
@@ -798,7 +867,7 @@ function initializeAggregateFunctionMenus(keys) {
  */
 function hideElements() {
     $('#loading').hide();
-    $('#filter').hide();
+    $('.show').hide();
     $('.dropDown').hide();
     $('.aggrFuncs').hide();
 }
@@ -896,6 +965,17 @@ function isValidRequest(request) {
 }
 
 function resetPage() {
-    $('#showFilters').prop("checked", false);
+    $("#showFilters").prop("checked", false);
+    $("#showEdgeLabels").prop("checked", false);
     $("#databases").val("default");
+}
+
+function generateRandomColors(labels) {
+    colorMap = {};
+    labels.forEach(function (label) {
+        var r = Math.floor((Math.random() * 255));
+        var g = Math.floor((Math.random() * 255));
+        var b = Math.floor((Math.random() * 255));
+        colorMap[label] = [r, g, b];
+    });
 }

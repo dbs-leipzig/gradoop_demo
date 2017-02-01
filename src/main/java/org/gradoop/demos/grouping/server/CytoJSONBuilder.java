@@ -18,12 +18,14 @@
 package org.gradoop.demos.grouping.server;
 
 import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.gradoop.common.model.impl.pojo.Edge;
 import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
 import org.gradoop.common.model.impl.properties.Property;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -75,15 +77,8 @@ public class CytoJSONBuilder {
    */
   private static final String EDGE_TARGET = "target";
 
-
-  public CytoJSONBuilder() {
-  }
-
   // this actually only returns single graphs, but i will change this later
-  public String getJSON(
-    GraphHead graphHead,
-    List<Vertex> vertices,
-    List<Edge> edges) throws Exception {
+  String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws Exception {
 
     JSONObject returnedJSON = new JSONObject();
 
@@ -143,6 +138,63 @@ public class CytoJSONBuilder {
     }
 
 
+    returnedJSON.put(EDGES, edgeArray);
+    return returnedJSON.toString();
+
+  }
+
+  String getJSON(JSONObject graph, JSONArray vertices, JSONArray edges) throws JSONException {
+
+    JSONObject returnedJSON = new JSONObject();
+
+    returnedJSON.put(TYPE, "graph");
+
+
+    JSONObject graphObject = new JSONObject();
+    graphObject.put(IDENTIFIER, graph.getString("id"));
+    graphObject.put(LABEL, graph.getJSONObject("meta").getString("label"));
+
+    graphObject.put(PROPERTIES, graph.getJSONObject("data"));
+
+    JSONArray graphArray = new JSONArray();
+    graphArray.put(graphObject);
+
+    returnedJSON.put(GRAPHS, graphArray);
+
+    JSONArray vertexArray = new JSONArray();
+    for (int i=0;i<vertices.length();i++) {
+      JSONObject vertex = vertices.getJSONObject(i);
+
+      JSONObject vertexData = new JSONObject();
+      vertexData.put(IDENTIFIER, vertex.getString("id"));
+      vertexData.put(LABEL, vertex.getJSONObject("meta").getString("label"));
+
+      vertexData.put(PROPERTIES, vertex.getJSONObject("data"));
+
+      JSONObject vertexObject = new JSONObject();
+      vertexObject.put(DATA, vertexData);
+
+      vertexArray.put(vertexObject);
+    }
+    returnedJSON.put(VERTICES, vertexArray);
+
+    JSONArray edgeArray = new JSONArray();
+    for (int i=0;i<edges.length();i++) {
+      JSONObject edge = edges.getJSONObject(i);
+
+      JSONObject edgeData = new JSONObject();
+      edgeData.put(EDGE_SOURCE, edge.getString("source"));
+      edgeData.put(EDGE_TARGET, edge.getString("target"));
+      edgeData.put(IDENTIFIER, edge.getString("id"));
+      edgeData.put(LABEL, edge.getJSONObject("meta").getString("label"));
+
+      edgeData.put(PROPERTIES, edge.getJSONObject("data"));
+
+      JSONObject edgeObject = new JSONObject();
+      edgeObject.put(DATA, edgeData);
+
+      edgeArray.put(edgeObject);
+    }
     returnedJSON.put(EDGES, edgeArray);
     return returnedJSON.toString();
 

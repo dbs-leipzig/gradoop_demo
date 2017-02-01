@@ -186,7 +186,7 @@ a {
     background-color: #000;
 }
 
-#filter {
+.show {
     display: table-cell;
     vertical-align: middle;
     font-size: 12px;

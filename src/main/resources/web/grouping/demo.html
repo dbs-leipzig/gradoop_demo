@@ -20,13 +20,13 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" type="text/css" href="qtip/jquery.qtip.css">
-    <link href="cytodemo.css" rel="stylesheet"/>
+    <link href="demo.css" rel="stylesheet"/>
     <meta charset=utf-8/>
     <script src="jquery/jquery-1.11.3.min.js"></script>
     <script src="cytoscape/cytoscape.min.js"></script>
     <script src="cytoscape/cytoscape-qtip.js"></script>
     <script src="qtip/jquery.qtip.min.js"></script>
-    <script src="cytodemo.js"></script>
+    <script src="demo.js"></script>
 </head>
 <body>
 <div id="sidebar">
@@ -42,8 +42,10 @@
     </select>
     <br>
 
+    <button type="button" id="wholeGraph" style="display: none;">Show whole graph</button>
+
     <p>
-        <label id="filter"><input type="checkbox" name="filter" value="filter" id="showFilters">
+        <label class="show"><input type="checkbox" name="filter" value="filter" id="showFilters">
             Show filtering options
         </label>
     </p>
@@ -144,7 +146,13 @@
         </dd>
     </dl>
 
-    <button type="button" id="exec">Execute</button>
+    <p>
+        <label class="show">
+            <input type="checkbox" id="showEdgeLabels" >Show edge labels
+        </label>
+    </p>
+
+    <button type="button" id="exec" style="display: none;">Execute</button>
 </div>
 <div id="canvas">
     <div id="loading"></div>

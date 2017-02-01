@@ -44,7 +44,7 @@ public class Server {
    * @return Base URI
    */
   private static URI getBaseURI() {
-    return UriBuilder.fromUri("http://localhost/").port(9998).build();
+    return UriBuilder.fromUri("http://localhost/").port(2342).build();
   }
 
   /**
@@ -58,7 +58,7 @@ public class Server {
     rc.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, true);
     HttpServer server = GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
     HttpHandler staticHandler = new StaticHttpHandler(
-      Server.class.getResource("/web/grouping").getPath());
+      Server.class.getResource("/web").getPath());
     server.getServerConfiguration().addHttpHandler( staticHandler, "/gradoop" );
 
     return server;

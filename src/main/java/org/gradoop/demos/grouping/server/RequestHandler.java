@@ -53,9 +53,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -73,9 +76,6 @@ import java.util.Set;
 public class RequestHandler {
 
   private final String META_FILENAME = "/metadata.json";
-
-  List<String> bufferedVertexLabels;
-  List<String> bufferedEdgeLabels;
 
   private static final ExecutionEnvironment ENV = ExecutionEnvironment.createLocalEnvironment();
   private GradoopFlinkConfig config = GradoopFlinkConfig.createConfig(ENV);
@@ -276,6 +276,48 @@ public class RequestHandler {
     return labelArray;
   }
 
+  @POST
+  @Path("/graph/{databaseName}")
+  @Produces("application/json;charset=utf-8")
+  public Response getGraph(@PathParam("databaseName") String databaseName) throws Exception {
+
+
+    String graphPath =
+      RequestHandler.class.getResource("/data/" + databaseName + "/graphs.json").getPath();
+    String vertexPath =
+      RequestHandler.class.getResource("/data/" + databaseName + "/vertices.json").getPath();
+    String edgePath =
+      RequestHandler.class.getResource("/data/" + databaseName + "/edges.json").getPath();
+
+    
+    BufferedReader reader = new BufferedReader(new FileReader(graphPath));
+    String line = reader.readLine();
+    JSONObject graph = new JSONObject(line);
+    reader.close();
+
+    reader = new BufferedReader(new FileReader(vertexPath));
+    JSONArray vertices = new JSONArray();
+    while ((line = reader.readLine()) != null) {
+      JSONObject vertex = new JSONObject(line);
+      vertices.put(vertex);
+    }
+    reader.close();
+
+    reader = new BufferedReader(new FileReader(edgePath));
+    JSONArray edges = new JSONArray();
+    while ((line = reader.readLine()) != null) {
+      JSONObject edge = new JSONObject(line);
+      edges.put(edge);
+    }
+    reader.close();
+
+    CytoJSONBuilder cytoBuilder = new CytoJSONBuilder();
+
+    String json = cytoBuilder.getJSON(graph, vertices, edges);
+    System.out.println(json);
+    return Response.ok(json).build();
+  }
+
   /**
    * Takes a {@link GroupingRequest}, executes a grouping with the parameters it contains and
    * returns the results as a JSON.
@@ -288,8 +330,6 @@ public class RequestHandler {
   @Path("/data")
   @Produces("application/json;charset=utf-8")
   public Response getData(GroupingRequest request) throws Exception {
-
-    System.out.println(request.toString());
 
     //load the database
     String dbName = request.getDbName();
@@ -338,20 +378,17 @@ public class RequestHandler {
       String[] split = vertexAggrFunc.split(" ");
       switch (split[0]) {
       case "max":
-        builder.addVertexAggregator(new MaxAggregator(split[1], "max"));
+        builder.addVertexAggregator(new MaxAggregator(split[1], "max " + split[1]));
         break;
       case "min":
-        builder.addVertexAggregator(new MinAggregator(split[1], "min"));
+        builder.addVertexAggregator(new MinAggregator(split[1], "min " + split[1]));
         break;
       case "sum":
-        builder.addVertexAggregator(new SumAggregator(split[1], "sum"));
+        builder.addVertexAggregator(new SumAggregator(split[1], "sum " + split[1]));
         break;
       case "count":
         builder.addVertexAggregator(new CountAggregator());
         break;
-      default:
-        System.out.println(vertexAggrFunc);
-        System.out.println("hö");
       }
     }
 
@@ -363,19 +400,17 @@ public class RequestHandler {
       String[] split = edgeAggrFunc.split(" ");
       switch (split[0]) {
       case "max":
-        builder.addEdgeAggregator(new MaxAggregator(split[1], "max"));
+        builder.addEdgeAggregator(new MaxAggregator(split[1], "max " + split[1]));
         break;
       case "min":
-        builder.addEdgeAggregator(new MinAggregator(split[1], "min"));
+        builder.addEdgeAggregator(new MinAggregator(split[1], "min " + split[1]));
         break;
       case "sum":
-        builder.addEdgeAggregator(new SumAggregator(split[1], "sum"));
+        builder.addEdgeAggregator(new SumAggregator(split[1], "sum " + split[1]));
         break;
       case "count":
         builder.addEdgeAggregator(new CountAggregator());
         break;
-      default:
-        System.out.println("hö");
       }
     }
 
