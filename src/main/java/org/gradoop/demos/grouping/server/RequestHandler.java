@@ -314,7 +314,6 @@ public class RequestHandler {
     CytoJSONBuilder cytoBuilder = new CytoJSONBuilder();
 
     String json = cytoBuilder.getJSON(graph, vertices, edges);
-    System.out.println(json);
     return Response.ok(json).build();
   }
 

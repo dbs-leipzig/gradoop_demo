@@ -88,22 +88,45 @@ $(document).ready(function () {
     });
 });
 
-function showGraph(data, defaultLabel) {
+function showGraph(data, useDefaultLabel) {
 
-    var vertices = data["nodes"];
+    var nodes = data.nodes;
+    var edges = data.edges;
+
     var labels = new Set();
-    for (var i = 0; i < vertices.length; i++) {
-        var vertex = vertices[i];
-        labels.add(vertex["data"]["label"]);
+
+
+    var maxVertexCount = 0;
+
+    for (var i = 0; i < nodes.length; i++) {
+        var vertex = nodes[i];
+        var vertexCount = Number(vertex["data"]["properties"]["count"]);
+        if ((vertexCount != null) && (vertexCount > maxVertexCount)) {
+            maxVertexCount = vertexCount;
+        }
+        if (!useDefaultLabel && vertexLabelKey != "label") {
+            labels.add(vertex["data"]["properties"][vertexLabelKey]);
+        } else {
+            labels.add(vertex["data"]["label"]);
+        }
     }
+
+
     generateRandomColors(labels);
+
+    var maxEdgeCount = 0;
+    for (var j = 0; j < edges.length; j++) {
+        var edge = edges[j];
+        var edgeCount = Number(edge["data"]["properties"]["count"]);
+        if ((edgeCount != null) && (edgeCount > maxEdgeCount)) {
+            maxEdgeCount = edgeCount;
+        }
+    }
 
     //hide the loading gif
     $("#loading").hide();
 
     //get data from the servers response
-    var nodes = data.nodes;
-    var edges = data.edges;
 
     //update vertex and edge count
     var rows = "";
@@ -123,48 +146,41 @@ function showGraph(data, defaultLabel) {
                     //define label content and font
                     "content": function (node) {
 
-                        var labelString = "";
-                        if (!defaultLabel && vertexLabelKey != "label") {
-                            labelString += node.data("properties")[vertexLabelKey] + " ";
-                        } else {
-                            labelString += node.data("label") + " ";
-                        }
-
+                        var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
 
                         var properties = node.data("properties");
 
-                        var aggregate = null;
-
                         if (properties["count"] != null) {
-                            aggregate = properties["count"];
-                        } else if (properties["min"] != null) {
-                            aggregate = properties["min"];
-                        } else if (properties["max"] != null) {
-                            aggregate = properties["max"];
-                        } else if (properties["sum"] != null) {
-                            aggregate = properties["sum"];
-                        }
-
-                        if (aggregate != null) {
-                            for (var property in properties) {
-                                var key = property;
-                                if (!($.inArray(key, ["count", "min", "max", "sum"]) > -1)) {
-                                    var value = properties[key];
-                                    if (value != "__NULL") {
-                                        labelString += properties[key] + " ";
-                                    }
-                                }
-                            }
-                            labelString += "(" + aggregate + ")";
+                            labelString += " (" + properties["count"] + ")";
                         }
 
                         return labelString;
                     },
-
+                    "font-size": function (node) {
+                        if ($("#showCountAsSize").is(":checked")) {
+                            var count = node.data("properties")["count"];
+                            if (count != null) {
+                                count = count / maxVertexCount;
+                                //surface of nodes is proportional to count
+                                return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
+                            }
+                        }
+                        return 10;
+                    },
                     "text-valign": "center",
                     "color": "black",
-                    "background-color": function(node) {
-                        var color = colorMap[node.data("label")];
+                    //this function changes the text color according to the background color
+                    /* function (node) {
+                     var label = getLabel(node, vertexLabelKey, useDefaultLabel);
+                     var bgColor = colorMap[label];
+                     if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
+                     return "white";
+                     }
+                     return "black";
+                     },*/
+                    "background-color": function (node) {
+                        var label = getLabel(node, vertexLabelKey, useDefaultLabel);
+                        var color = colorMap[label];
                         var result = "#";
                         result += ("0" + color[0].toString(16)).substr(-2);
                         result += ("0" + color[1].toString(16)).substr(-2);
@@ -176,24 +192,28 @@ function showGraph(data, defaultLabel) {
                     //count specifies that the node stands for
                     //1 or more other nodes
                     "width": function (node) {
-                        var count = node.data("properties")["count"];
-                        if (count != null) {
-                            //surface of nodes is proportional to count
-                            return Math.sqrt(count * 10000 / Math.PI) + "px";
+                        if ($("#showCountAsSize").is(":checked")) {
+                            var count = node.data("properties")["count"];
+                            if (count != null) {
+                                count = count / maxVertexCount;
+                                //surface of nodes is proportional to count
+                                return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                            }
                         }
-                        else {
-                            return "60px";
-                        }
+                        return "60px";
+
                     },
 
                     "height": function (node) {
-                        var count = node.data("properties")["count"];
-                        if (count != null) {
-                            return Math.sqrt(count * 10000 / Math.PI) + "px";
+                        if ($("#showCountAsSize").is(":checked")) {
+                            var count = node.data("properties")["count"];
+                            if (count != null) {
+                                count = count / maxVertexCount;
+                                //surface of nodes is proportional to count
+                                return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                            }
                         }
-                        else {
-                            return "60px";
-                        }
+                        return "60px";
                     },
                     "text-wrap": "wrap"
                 })
@@ -206,44 +226,38 @@ function showGraph(data, defaultLabel) {
                             return "";
                         }
 
-                        var labelString = "";
-                        if (!defaultLabel && vertexLabelKey != "label") {
-                            labelString += edge.data("properties")[vertexLabelKey] + " ";
-                        } else {
-                            labelString += edge.data("label") + " ";
-                        }
+                        var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
 
                         var properties = edge.data("properties");
 
-                        var aggregate = null;
-
                         if (properties["count"] != null) {
-                            aggregate = properties["count"];
-                        } else if (properties["min"] != null) {
-                            aggregate = properties["min"];
-                        } else if (properties["max"] != null) {
-                            aggregate = properties["max"];
-                        } else if (properties["sum"] != null) {
-                            aggregate = properties["sum"];
-                        }
-
-                        if (aggregate != null) {
-                            for (var property in properties) {
-                                var key = "" + property;
-                                if (!($.inArray(key, ["count", "min", "max", "sum"]) > -1)) {
-                                    var value = properties[key];
-                                    if (value != "__NULL") {
-                                        labelString += properties[key] + " ";
-                                    }
-                                }
-                            }
-                            labelString += "(" + aggregate + ")";
+                            labelString += " (" + properties["count"] + ")";
                         }
 
                         return labelString;
                     },
+                    "font-size": function (node) {
+                        if ($("#showCountAsSize").is(":checked")) {
+                            var count = node.data("properties")["count"];
+                            if (count != null) {
+                                count = count / maxVertexCount;
+                                //surface of nodes is proportional to count
+                                return Math.max(2, Math.sqrt(count * 60));
+                            }
+                        }
+                        return 10;
+                    },
                     "line-color": "#999",
-                    "stroke-width": 2,
+                    "width": function (edge) {
+                        if ($("#showCountAsSize").is(":checked")) {
+                            var count = edge.data("properties")["count"];
+                            if (count != null) {
+                                count = count / maxEdgeCount;
+                                return Math.sqrt(count * 1000);
+                            }
+                        }
+                        return 2;
+                    },
                     "target-arrow-shape": "triangle",
                     "target-arrow-color": "#000"
                 })
@@ -967,15 +981,31 @@ function isValidRequest(request) {
 function resetPage() {
     $("#showFilters").prop("checked", false);
     $("#showEdgeLabels").prop("checked", false);
+    $("#showCountAsSize").prop("checked", false);
     $("#databases").val("default");
 }
 
 function generateRandomColors(labels) {
     colorMap = {};
     labels.forEach(function (label) {
-        var r = Math.floor((Math.random() * 255));
-        var g = Math.floor((Math.random() * 255));
-        var b = Math.floor((Math.random() * 255));
+        var r = 0;
+        var g = 0;
+        var b = 0;
+        while (r + g + b < 382) {
+            r = Math.floor((Math.random() * 255));
+            g = Math.floor((Math.random() * 255));
+            b = Math.floor((Math.random() * 255));
+        }
         colorMap[label] = [r, g, b];
     });
+}
+
+function getLabel(element, key, useDefaultLabel) {
+    var label = "";
+    if (!useDefaultLabel && key != "label") {
+        label += element.data("properties")[key];
+    } else {
+        label += element.data("label");
+    }
+    return label;
 }

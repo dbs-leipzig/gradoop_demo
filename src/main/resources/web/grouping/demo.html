@@ -45,8 +45,23 @@
     <button type="button" id="wholeGraph" style="display: none;">Show whole graph</button>
 
     <p>
-        <label class="show"><input type="checkbox" name="filter" value="filter" id="showFilters">
+        <label class="show">
+            <input type="checkbox" name="filter" value="filter" id="showFilters">
             Show filtering options
+        </label>
+    </p>
+
+    <p>
+        <label class="show">
+            <input type="checkbox" id="showEdgeLabels" >
+            Show edge labels
+        </label>
+    </p>
+
+    <p>
+        <label class="show">
+            <input type="checkbox" id="showCountAsSize" >
+            Scale vertices and edge with count
         </label>
     </p>
 
@@ -145,12 +160,6 @@
             </div>
         </dd>
     </dl>
-
-    <p>
-        <label class="show">
-            <input type="checkbox" id="showEdgeLabels" >Show edge labels
-        </label>
-    </p>
 
     <button type="button" id="exec" style="display: none;">Execute</button>
 </div>
