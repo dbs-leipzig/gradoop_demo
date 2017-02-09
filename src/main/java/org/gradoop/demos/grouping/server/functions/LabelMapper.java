@@ -24,9 +24,13 @@ import org.gradoop.common.model.api.entities.EPGMElement;
 import java.util.Set;
 
 /**
- * Created by niklas on 23.01.17.
+ * Extracts all labels from an epgm element
+ * @param <E> epgm element type
  */
 public class LabelMapper<E extends EPGMElement> implements MapFunction<E, Set<String>> {
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Set<String> map(E e) throws Exception {
     return Sets.newHashSet(e.getLabel());

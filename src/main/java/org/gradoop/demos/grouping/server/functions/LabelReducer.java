@@ -22,10 +22,13 @@ import org.apache.flink.api.common.functions.ReduceFunction;
 import java.util.Set;
 
 /**
- * Created by niklas on 23.01.17.
+ * Reduce the dataset of labels to one set.
  */
 public class LabelReducer implements ReduceFunction<Set<String>> {
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Set<String> reduce(Set<String> set1, Set<String> set2) throws Exception {
     set1.addAll(set2);

@@ -26,12 +26,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by niklas on 18.01.17.
+ * Reduce the dataset of properties, represented as tuples3 of label of vertices with this
+ * property, property key and a boolean specifying if it is numerical into one tuple3 with all
+ * vertex labels in the first field.
  */
 public class LabelGroupReducer implements GroupReduceFunction<
   Tuple3<String, String, Boolean>, Tuple3<Set<String>, String, Boolean>> {
 
-
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void reduce(
     Iterable<Tuple3<String, String, Boolean>> iterable,

@@ -30,12 +30,12 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Basic class, used for starting and stopping the org.gradoop.demos.grouping.server.
+ * Basic class, used for starting and stopping the server.
  */
 public class Server {
 
   /**
-   * URI that specifies where the org.gradoop.demos.grouping.server is run.
+   * URI that specifies where the server is run.
    */
   private static final URI BASE_URI = getBaseURI();
 
@@ -48,9 +48,9 @@ public class Server {
   }
 
   /**
-   * Starts the org.gradoop.demos.grouping.server and adds the request handlers.
-   * @return the running org.gradoop.demos.grouping.server
-   * @throws IOException if org.gradoop.demos.grouping.server creation fails
+   * Starts the server and adds the request handlers.
+   * @return the running server
+   * @throws IOException if server creation fails
    */
   private static HttpServer startServer() throws IOException {
     System.out.println("Starting grizzly...");
@@ -65,9 +65,9 @@ public class Server {
   }
 
   /**
-   * Main method. Run this to start the org.gradoop.demos.grouping.server.
+   * Main method. Run this to start the server at localhost:9998.
    * @param args command line parameters
-   * @throws IOException if org.gradoop.demos.grouping.server creation fails
+   * @throws IOException if server creation fails
    */
   public static void main(String[] args) throws IOException {
     HttpServer httpServer = startServer();

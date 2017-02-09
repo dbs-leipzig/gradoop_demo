@@ -15,9 +15,7 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server; /**
- * Created by niklas on 03.01.17.
- */
+package org.gradoop.demos.grouping.server;
 
 import org.gradoop.demos.grouping.server.functions.LabelFilter;
 import org.gradoop.demos.grouping.server.functions.LabelGroupReducer;
@@ -68,9 +66,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-
 /**
- * Handles REST requests to the org.gradoop.demos.grouping.server.
+ * Handles REST requests to the server.
  */
 @Path("")
 public class RequestHandler {
@@ -82,6 +79,7 @@ public class RequestHandler {
 
   /**
    * Creates a list of all available databases from the file structure under the /data/ folder.
+   *
    * @return List of folders (datbases) under the /data/ folder.
    */
   @GET
@@ -111,6 +109,7 @@ public class RequestHandler {
    * Takes a database name via a POST request and returns the keys of all
    * vertex and edge properties, and a boolean value specifying if the property has a numerical
    * type. The return is a string in the JSON format, for easy usage in a JavaScript web page.
+   *
    * @param databaseName name of the loaded database
    * @return  A JSON containing the vertices and edges property keys
    */
@@ -140,6 +139,11 @@ public class RequestHandler {
     }
   }
 
+  /**
+   * Compute property keys and labels.
+   * @param databaseName name of the database
+   * @return JSONObject containing property keys and labels
+   */
   private JSONObject computeKeysAndLabels(String databaseName) {
     // load the database
     String graphPath =
@@ -175,7 +179,14 @@ public class RequestHandler {
     }
   }
 
-  private JSONObject readKeysAndLabels(String databaseName) throws Exception {
+  /**
+   * Read the property keys and labels from the buffered JSON.
+   * @param databaseName name of the database
+   * @return JSONObject containing the property keys and labels
+   * @throws IOException if reading fails
+   * @throws JSONException if JSON creation fails
+   */
+  private JSONObject readKeysAndLabels(String databaseName) throws IOException, JSONException {
     String dataPath = RequestHandler.class.getResource("/data/" + databaseName).getFile();
     String content =
       new String(Files.readAllBytes(Paths.get(dataPath + META_FILENAME)), StandardCharsets.UTF_8);
@@ -187,6 +198,7 @@ public class RequestHandler {
    * Takes any given graph and creates a JSONArray containing the vertex property keys and a
    * boolean,
    * specifying it the property has a numerical type.
+   *
    * @param graph input graph
    * @return  JSON array with property keys and boolean, that is true if the property type is
    * numercial
@@ -206,6 +218,7 @@ public class RequestHandler {
   /**
    * Takes any given graph and creates a JSONArray containing the edge property keys and a boolean,
    * specifying it the property has a numerical type.
+   *
    * @param graph input graph
    * @return  JSON array with property keys and boolean, that is true if the property type is
    * numercial
@@ -226,6 +239,7 @@ public class RequestHandler {
    * Convenience method.
    * Takes a set of tuples of property keys and booleans, specifying if the property is numerical,
    * and creates a JSON array containing the same data.
+   *
    * @param keys set of tuples of property keys and booleans, that are true if the property type
    *             is numerical
    * @return JSONArray containing the same data as the input
@@ -248,6 +262,13 @@ public class RequestHandler {
     return keyArray;
   }
 
+  /**
+   * Compute the labels of the vertices.
+   *
+   * @param graph logical graph
+   * @return JSONArray containing the vertex labels
+   * @throws Exception if the computation fails
+   */
   private JSONArray getVertexLabels(LogicalGraph graph) throws Exception {
     Set<String> vertexLabels = graph.getVertices()
       .map(new LabelMapper<Vertex>())
@@ -258,6 +279,13 @@ public class RequestHandler {
     return buildArrayFromLabels(vertexLabels);
   }
 
+  /**
+   * Compute the labels of the edges.
+   *
+   * @param graph logical graph
+   * @return JSONArray containing the edge labels
+   * @throws Exception if the computation fails
+   */
   private JSONArray getEdgeLabels(LogicalGraph graph ) throws Exception {
     Set<String> edgeLabels = graph.getEdges()
       .map(new LabelMapper<Edge>())
@@ -268,6 +296,12 @@ public class RequestHandler {
     return buildArrayFromLabels(edgeLabels);
   }
 
+  /**
+   * Create a JSON array from the sets of labels.
+   *
+   * @param labels set of labels
+   * @return JSON array of labels
+   */
   private JSONArray buildArrayFromLabels(Set<String> labels) {
     JSONArray labelArray = new JSONArray();
     for(String label : labels) {
@@ -276,10 +310,20 @@ public class RequestHandler {
     return labelArray;
   }
 
+  /**
+   * Get the complete graph in cytoscape-conform form.
+   *
+   * @param databaseName name of the database
+   * @return Response containing the graph as a JSON, in cytoscape conform format.
+   * @throws JSONException if JSON creation fails
+   * @throws IOException if reading fails
+   */
+
   @POST
   @Path("/graph/{databaseName}")
   @Produces("application/json;charset=utf-8")
-  public Response getGraph(@PathParam("databaseName") String databaseName) throws Exception {
+  public Response getGraph(@PathParam("databaseName") String databaseName) throws JSONException,
+    IOException {
 
 
     String graphPath =
@@ -320,7 +364,8 @@ public class RequestHandler {
   /**
    * Takes a {@link GroupingRequest}, executes a grouping with the parameters it contains and
    * returns the results as a JSON.
-   * @param request GroupingRequest send to the org.gradoop.demos.grouping.server, containing the parameters for a
+   *
+   * @param request GroupingRequest send to the server, containing the parameters for a
    *        {@link Grouping}.
    * @return a JSON containing the result of the executed Grouping, a graph
    * @throws Exception if the collecting of the distributed data fails

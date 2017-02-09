@@ -21,23 +21,32 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.gradoop.common.model.api.entities.EPGMElement;
 
+
 /**
- * Created by niklas on 23.01.17.
+ * Apply a filter on a dataset of elements. The filter is given as array of allowed labels.
+ * @param <E> epgm element type
  */
 public class LabelFilter<E extends EPGMElement> implements FilterFunction<E> {
 
+  /**
+   * Array of allowed labels
+   */
   private String[] labels;
 
+  /**
+   * Constructor
+   * @param labels array of allowed labels
+   */
   public LabelFilter(String[] labels) {
     this.labels = labels;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean filter(E e) throws Exception {
-    if (labels.length == 0) {
-      return true;
-    }
-    return ArrayUtils.contains(labels, e.getLabel());
+    return labels.length == 0 || ArrayUtils.contains(labels, e.getLabel());
 
   }
 }

@@ -12,38 +12,60 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Gradoop.  If not, see <http:// www.gnu.org/licenses/>.
+ */
+
+/**
+ * Prefixes of the aggregation functions
  */
 var aggrPrefixes = ["min ", "max ", "sum "];
 
+/**
+ * Maps of (label) to (property key, number of supporting labels)
+ * used to make unsupported property keys diabled
+ * @type {Object<String, {String, Integer}>}
+ */
 var vertexFilterMap = {};
 var edgeFilterMap = {};
 
+/**
+ * Property keys that are used to specify the vertex and edge labels.
+ */
 var vertexLabelKey;
 var edgeLabelKey;
 
+/**
+ * Map of all possible values for the vertexLabelKey to a color in RGB format.
+ * @type {{}}
+ */
 var colorMap = {};
 
 $(document).ready(function () {
 
-    //hide everything that is invisible at the beginning
+    // hide everything that is invisible at the beginning
     hideElements();
-    //reset the webpage on reload, this is to keep the browser from trying to keep the current state
+
+    // reset the webpage on reload, this is to keep the browser from trying to keep the current
+    // state
     resetPage();
 
-    //get the available databases from the org.gradoop.demos.grouping.server
-    //if the request is a success, add them to the database propertyKeys menu
-    $.get("http://localhost:2342/databases/")
+    // get the available databases from the org.gradoop.demos.grouping.server
+    // if the request is a success, add them to the database propertyKeys menu
+    $.get("http:// localhost:2342/databases/")
         .done(initializeDatabaseMenu)
         .fail(function (jqXHR, textStatus, errorThrown) {
             alert(errorThrown);
         });
 
+    // when the "Show whole graph" button is clicked, send a request to the server for the whole
+    // graph
     $("#wholeGraph").bind("click", function () {
 
+        // show the loading spinner
         $("#loading").show();
+
         var databaseName = getSelectedDatabase();
-        $.post("http://localhost:2342/graph/" + databaseName)
+        $.post("http:// localhost:2342/graph/" + databaseName)
             .done(function (data) {
                 showGraph(data, true);
             })
@@ -54,6 +76,7 @@ $(document).ready(function () {
     });
 
 
+    // when the "Execute" button is clicked, construct a request and send it to the server
     $("#exec").bind("click", function () {
 
         var request = {};
@@ -66,14 +89,14 @@ $(document).ready(function () {
         request.vertexFilters = getSelectedVertexFilters();
         request.edgeFilters = getSelectedEdgeFilters();
 
+        // validate request
         if (isValidRequest(request)) {
-            //Show a loading gif
+
+            // show the loading gif
             $("#loading").show();
 
-            //Send a POST request to the org.gradoop.demos.grouping.server
-
             $.ajax({
-                url: "http://localhost:2342/data/",
+                url: "http:// localhost:2342/data/",
                 datatype: "text",
                 type: "post",
                 contentType: "application/json",
@@ -88,16 +111,18 @@ $(document).ready(function () {
     });
 });
 
+// function called when the server returns the data
 function showGraph(data, useDefaultLabel) {
 
+    // lists of nodes and edges
     var nodes = data.nodes;
     var edges = data.edges;
 
+    // set conaining all distinct labels (property key specified by vertexLabelKey)
     var labels = new Set();
 
-
+    // compute maximum count of all vertices, used for scaling the vertex sizes
     var maxVertexCount = 0;
-
     for (var i = 0; i < nodes.length; i++) {
         var vertex = nodes[i];
         var vertexCount = Number(vertex["data"]["properties"]["count"]);
@@ -111,9 +136,10 @@ function showGraph(data, useDefaultLabel) {
         }
     }
 
-
+    // generate random colors for the vertex labels
     generateRandomColors(labels);
 
+    // compute maximum count of all edges, used for scaling the edge sizes
     var maxEdgeCount = 0;
     for (var j = 0; j < edges.length; j++) {
         var edge = edges[j];
@@ -123,19 +149,19 @@ function showGraph(data, useDefaultLabel) {
         }
     }
 
-    //hide the loading gif
+    // hide the loading gif
     $("#loading").hide();
 
-    //get data from the servers response
 
-    //update vertex and edge count
+    // update vertex and edge count
     var rows = "";
     rows += "<tr><td>Vertex Count</td><td>:</td><td>"
         + nodes.length + "</td></tr>";
     rows += "<tr><td>Edge Count</td><td>:</td><td>"
         + edges.length + "</td></tr>";
     $("#stats").html(rows);
-    //start cytoscape
+
+    // start cytoscape
     $(function () {
         cytoscape({
             container: document.getElementById("canvas"),
@@ -143,7 +169,7 @@ function showGraph(data, useDefaultLabel) {
                 .selector("node")
                 .css({
 
-                    //define label content and font
+                    // define label content and font
                     "content": function (node) {
 
                         var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
@@ -156,12 +182,13 @@ function showGraph(data, useDefaultLabel) {
 
                         return labelString;
                     },
+                    // if the count shall effect the vertex size, set font size accordingly
                     "font-size": function (node) {
                         if ($("#showCountAsSize").is(":checked")) {
                             var count = node.data("properties")["count"];
                             if (count != null) {
                                 count = count / maxVertexCount;
-                                //surface of nodes is proportional to count
+                                // surface of nodes is proportional to count
                                 return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
                             }
                         }
@@ -169,7 +196,8 @@ function showGraph(data, useDefaultLabel) {
                     },
                     "text-valign": "center",
                     "color": "black",
-                    //this function changes the text color according to the background color
+                    // this function changes the text color according to the background color
+                    // unnecessary atm because only light colors can be generated
                     /* function (node) {
                      var label = getLabel(node, vertexLabelKey, useDefaultLabel);
                      var bgColor = colorMap[label];
@@ -178,6 +206,7 @@ function showGraph(data, useDefaultLabel) {
                      }
                      return "black";
                      },*/
+                    // set background color according to color map
                     "background-color": function (node) {
                         var label = getLabel(node, vertexLabelKey, useDefaultLabel);
                         var color = colorMap[label];
@@ -188,28 +217,27 @@ function showGraph(data, useDefaultLabel) {
                         return result;
                     },
 
-                    //size of nodes is determined by property count
-                    //count specifies that the node stands for
-                    //1 or more other nodes
+                    // size of nodes can be determined by property count
+                    // count specifies that the node stands for
+                    // 1 or more other nodes
                     "width": function (node) {
                         if ($("#showCountAsSize").is(":checked")) {
                             var count = node.data("properties")["count"];
                             if (count != null) {
                                 count = count / maxVertexCount;
-                                //surface of nodes is proportional to count
+                                // surface of nodes is proportional to count
                                 return Math.sqrt(count * 1000000 / Math.PI) + "px";
                             }
                         }
                         return "60px";
 
                     },
-
                     "height": function (node) {
                         if ($("#showCountAsSize").is(":checked")) {
                             var count = node.data("properties")["count"];
                             if (count != null) {
                                 count = count / maxVertexCount;
-                                //surface of nodes is proportional to count
+                                // surface of nodes is proportional to count
                                 return Math.sqrt(count * 1000000 / Math.PI) + "px";
                             }
                         }
@@ -219,7 +247,7 @@ function showGraph(data, useDefaultLabel) {
                 })
                 .selector("edge")
                 .css({
-                    //layout of edge and edge label
+                    // layout of edge and edge label
                     "content": function (edge) {
 
                         if (!$("#showEdgeLabels").is(":checked")) {
@@ -236,18 +264,21 @@ function showGraph(data, useDefaultLabel) {
 
                         return labelString;
                     },
+                    // if the count shall effect the vertex size, set font size accordingly
                     "font-size": function (node) {
                         if ($("#showCountAsSize").is(":checked")) {
                             var count = node.data("properties")["count"];
                             if (count != null) {
                                 count = count / maxVertexCount;
-                                //surface of nodes is proportional to count
+                                // surface of nodes is proportional to count
                                 return Math.max(2, Math.sqrt(count * 60));
                             }
                         }
                         return 10;
                     },
                     "line-color": "#999",
+                    // width of edges can be determined by property count
+                    // count specifies that the edge represents 1 or more other edges
                     "width": function (edge) {
                         if ($("#showCountAsSize").is(":checked")) {
                             var count = edge.data("properties")["count"];
@@ -261,8 +292,8 @@ function showGraph(data, useDefaultLabel) {
                     "target-arrow-shape": "triangle",
                     "target-arrow-color": "#000"
                 })
-                //properties of edges and nodes in special states
-                //e.g. invisible or faded
+                // properties of edges and nodes in special states
+                // e.g. invisible or faded
                 .selector(":selected")
                 .css({
                     "background-color": "black",
@@ -288,8 +319,8 @@ function showGraph(data, useDefaultLabel) {
             ready: function () {
                 window.cy = this;
                 cy.elements().unselectify();
-                //if a node is selected, fade all edges and nodes
-                //that are not in direct neighborhood of the node
+                // if a node is selected, fade all edges and nodes
+                // that are not in direct neighborhood of the node
                 cy.on("tap", "node", function (e) {
                     var node = e.cyTarget;
                     var neighborhood = node.neighborhood().add(node);
@@ -297,15 +328,15 @@ function showGraph(data, useDefaultLabel) {
                     cy.elements().addClass("faded");
                     neighborhood.removeClass("faded");
                 });
-                //remove fading by clicking somewhere else
+                // remove fading by clicking somewhere else
                 cy.on("tap", function (e) {
 
                     if (e.cyTarget === cy) {
                         cy.elements().removeClass("faded");
                     }
                 });
-                //add a property box whenever a node or edge is
-                //selected
+                // add a property box whenever a node or edge is
+                // selected
                 cy.elements().qtip({
                     content: function () {
                         var qtipText = "";
@@ -328,68 +359,68 @@ function showGraph(data, useDefaultLabel) {
                         classes: "MyQtip"
                     }
                 });
-                //options for the force layout
+                // options for the force layout
                 var options = {
                     name: "cose",
 
-                    //called on `layoutready`
+                    // called on `layoutready`
                     ready: function () {
                     },
 
-                    //called on `layoutstop`
+                    // called on `layoutstop`
                     stop: function () {
                     },
 
-                    //whether to animate while running the layout
+                    // whether to animate while running the layout
                     animate: true,
 
-                    //number of iterations between consecutive screen positions update (0 ->
+                    // number of iterations between consecutive screen positions update (0 ->
                     // only updated on the end)
                     refresh: 4,
 
-                    //whether to fit the network view after when done
+                    // whether to fit the network view after when done
                     fit: true,
 
-                    //padding on fit
+                    // padding on fit
                     padding: 30,
 
-                    //constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+                    // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
                     boundingBox: undefined,
 
-                    //whether to randomize node positions on the beginning
+                    // whether to randomize node positions on the beginning
                     randomize: true,
 
-                    //whether to use the JS console to print debug messages
+                    // whether to use the JS console to print debug messages
                     debug: false,
 
-                    //node repulsion (non overlapping) multiplier
+                    // node repulsion (non overlapping) multiplier
                     nodeRepulsion: 8000000,
 
-                    //node repulsion (overlapping) multiplier
+                    // node repulsion (overlapping) multiplier
                     nodeOverlap: 10,
 
-                    //ideal edge (non nested) length
+                    // ideal edge (non nested) length
                     idealEdgeLength: 1,
 
-                    //divisor to compute edge forces
+                    // divisor to compute edge forces
                     edgeElasticity: 100,
 
-                    //nesting factor (multiplier) to compute ideal edge length for nested edges
+                    // nesting factor (multiplier) to compute ideal edge length for nested edges
                     nestingFactor: 5,
 
-                    //gravity force (constant)
+                    // gravity force (constant)
                     gravity: 250,
 
-                    //maximum number of iterations to perform
+                    // maximum number of iterations to perform
                     numIter: 100,
 
-                    //initial temperature (maximum node displacement)
+                    // initial temperature (maximum node displacement)
                     initialTemp: 200,
 
-                    //cooling factor (how the temperature is reduced between consecutive iterations
+                    // cooling factor (how the temperature is reduced between consecutive iterations
                     coolingFactor: 0.95,
 
-                    //lower temperature threshold (below this point the layout will end)
+                    // lower temperature threshold (below this point the layout will end)
                     minTemp: 1.0
                 };
                 cy.layout(options);
@@ -413,11 +444,12 @@ function initializeDatabaseMenu(databases) {
     }
     databaseSelect.children().on("click", sendKeyRequest);
 
-    //on click, the dropdown menus open, this has to be done here so it is done only once
+    // on click, the dropdown menus open, this has to be done here so it is done only once
     $(".dropDown").find("dt a").on("click", function () {
         $(this).closest(".dropDown").find("ul").slideToggle("fast");
     });
 
+    // hide dropdown menus when something else is clicked
     $(document).bind("click", function (e) {
         var $clicked = $(e.target);
         if (!$clicked.parents("#vertexPropertyKeys").length)
@@ -442,7 +474,7 @@ function initializeDatabaseMenu(databases) {
 function sendKeyRequest() {
     var databaseName = getSelectedDatabase();
     if (databaseName != "Select a database") {
-        $.post("http://localhost:2342/keys/" + databaseName)
+        $.post("http:// localhost:2342/keys/" + databaseName)
             .done(initializeOtherMenus)
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -464,17 +496,23 @@ function initializeOtherMenus(keys) {
     initializeAggregateFunctionMenus(keys);
 }
 
+/**
+ * Initialize the filter menus with the labels
+ * @param keys labels of the input vertices
+ */
 function initializeFilterKeyMenus(keys) {
 
     var vertexFilters = $("#vertexFilters");
     var edgeFilters = $("#edgeFilters");
 
+    // clear previous entries
     vertexFilters.find(".multiSel").children().remove();
     edgeFilters.find(".multiSel").children().remove();
 
     var vertexFilterSelect = vertexFilters.find("dd .multiSelect ul").empty();
     var edgeFilterSelect = edgeFilters.find("dd .multiSelect ul").empty();
 
+    // add one entry per vertex label
     for (var i = 0; i < keys.vertexLabels.length; i++) {
         var vertexLabel = keys.vertexLabels[i];
 
@@ -486,9 +524,10 @@ function initializeFilterKeyMenus(keys) {
             '<span title="' + vertexLabel + '">' + vertexLabel + '</span>');
     }
 
-
+    // hide the instructions
     vertexFilters.find('.instruction').hide();
 
+    // add one entry per vertex label
     for (var i = 0; i < keys.edgeLabels.length; i++) {
         var edgeLabel = keys.edgeLabels[i];
 
@@ -500,19 +539,22 @@ function initializeFilterKeyMenus(keys) {
             '<span title="' + edgeLabel + '">' + edgeLabel + '</span>');
     }
 
+    // hide the instructions
     edgeFilters.find(".instruction").hide();
 
-    var filter = $(".show");
-    filter.show();
+    // on click, toggle filter menu
     $("#showFilters").on("click", toggleFilterMenu);
 
-
+    // on click, select filters
     vertexFilters.find(".checkbox").on("click", elementSelected);
     vertexFilters.find(".checkbox").on("click", vertexFilterSelected);
     edgeFilters.find(".checkbox").on("click", elementSelected);
     edgeFilters.find(".checkbox").on("click", edgeFilterSelected);
 }
 
+/**
+ * Show or hide the filter menu
+ */
 function toggleFilterMenu() {
     var vertexFilters = $("#vertexFilters");
     var edgeFilters = $("#edgeFilters");
@@ -531,11 +573,11 @@ function toggleFilterMenu() {
  */
 function initializePropertyKeyMenus(keys) {
 
-    //get the propertyKeys menus in their current form
+    // get the propertyKeys menus in their current form
     var vertexPropertyKeys = $("#vertexPropertyKeys");
     var edgePropertyKeys = $("#edgePropertyKeys");
 
-    //remove the current keys from the property key menus
+    // remove the current keys from the property key menus
     var vertexSelect = vertexPropertyKeys.find("dd .multiSelect ul").empty();
     var edgeSelect = edgePropertyKeys.find("dd .multiSelect ul").empty();
 
@@ -547,7 +589,7 @@ function initializePropertyKeyMenus(keys) {
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
         var propertyLabel = "&lt;";
-        //insert an entry into the vertex filter map
+        // insert an entry into the vertex filter map
         createVertexFilterMapEntry(vertexKey);
         for (var j = 0; j < vertexKey.labels.length; j++) {
             propertyLabel += vertexKey.labels[j];
@@ -570,7 +612,7 @@ function initializePropertyKeyMenus(keys) {
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
         var propertyLabel = '&lt;';
-        //insert an entry into the edge filter map
+        // insert an entry into the edge filter map
         createEdgeFilterMapEntry(edgeKey);
         for (var j = 0; j < edgeKey.labels.length; j++) {
             propertyLabel += edgeKey.labels[j];
@@ -585,15 +627,15 @@ function initializePropertyKeyMenus(keys) {
         edgeSelect.append(edgeHtml);
     }
 
-    //show the propertyKeys menus
+    // show the propertyKeys menus
     vertexPropertyKeys.show();
     edgePropertyKeys.show();
 
-    //remove the currently selected keys, they are saved in <span> elements
+    // remove the currently selected keys, they are saved in <span> elements
     vertexPropertyKeys.find('.multiSel').children().remove();
     edgePropertyKeys.find('.multiSel').children().remove();
 
-    //show instructions
+    // show instructions
     vertexPropertyKeys.find('.instruction').show();
     edgePropertyKeys.find('.instruction').show();
 
@@ -604,6 +646,10 @@ function initializePropertyKeyMenus(keys) {
 
 }
 
+/**
+ * create a new entry in the vertex filter map via a vertex key
+ * @param vertexKey key that shall be inserted into the map
+ */
 function createVertexFilterMapEntry(vertexKey) {
 
     var vertexKeyObject = {};
@@ -624,6 +670,10 @@ function createVertexFilterMapEntry(vertexKey) {
     }
 }
 
+/**
+ * create a new entry in the edge filter map via an edge key
+ * @param edgeKey key that shall be inserted into the map
+ */
 function createEdgeFilterMapEntry(edgeKey) {
 
     var edgeKeyObject = {};
@@ -652,8 +702,8 @@ function elementSelected() {
     var title = $(this).val();
     var propertyKeys = $(this).closest('.dropDown');
 
-    //if a key is selected, add it as a span to the title of the property keys box
-    //else make the instruction visible
+    // if a key is selected, add it as a span to the title of the property keys box
+    // else make the instruction visible
     if ($(this).is(':checked')) {
         var html = '<span title="' + title + '">' + title + '</span>';
         propertyKeys.find('.multiSel').append(html);
@@ -665,6 +715,10 @@ function elementSelected() {
     }
 }
 
+/**
+ * set the first selected property as vertex label
+ * also make it bold in the selection
+ */
 function setVertexLabel() {
     var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
     selectedLabels.each(function () {
@@ -674,6 +728,10 @@ function setVertexLabel() {
     vertexLabelKey = selectedLabels.first().text();
 }
 
+/**
+ * set the first selected property as edge label
+ * also make it bold in the selection
+ */
 function setEdgeLabel() {
     var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
     selectedLabels.each(function () {
@@ -683,7 +741,9 @@ function setEdgeLabel() {
     edgeLabelKey = selectedLabels.first().text();
 }
 
-// function to hide properties of filtered elements
+/**
+ * function to hide properties of filtered elements
+ */
 
 function vertexFilterSelected() {
     if ($(this).is(':checked')) {
@@ -719,6 +779,9 @@ function vertexFilterSelected() {
     }
 }
 
+/**
+ * function called when a edge filter was selected
+ */
 function edgeFilterSelected() {
     if ($(this).is(':checked')) {
         var label = $(this).val();
@@ -752,6 +815,11 @@ function edgeFilterSelected() {
     }
 }
 
+/**
+ * Enable a property key in the dropdown menu
+ * @param dropdown the dropdown menu
+ * @param keyObject the property key object
+ */
 function enablePropertyKey(dropdown, keyObject) {
     var name = keyObject.name;
     var checkbox = $(dropdown)
@@ -761,6 +829,11 @@ function enablePropertyKey(dropdown, keyObject) {
 
 }
 
+/**
+ * Disable a property key in the dropdown menu
+ * @param dropdown the dropdown menu
+ * @param keyObject the property key object
+ */
 function disablePropertyKey(dropdown, keyObject) {
 
     var propertyDropdown = $(dropdown);
@@ -776,10 +849,13 @@ function disablePropertyKey(dropdown, keyObject) {
 
     if (propertyDropdown.find('.multiSel').children().length == 0)
         propertyDropdown.find('.instruction').show();
-
-
 }
 
+/**
+ * Enable a aggregation functions of a property key in the dropdown menu
+ * @param dropdown the dropdown menu
+ * @param keyObject the property key
+ */
 function enableAggrFunc(dropdown, keyObject) {
     var name = keyObject.name;
     for (var i = 0; i < aggrPrefixes.length; i++) {
@@ -791,6 +867,11 @@ function enableAggrFunc(dropdown, keyObject) {
     }
 }
 
+/**
+ * Diable the aggregation functions of a property key in the dropdown menu
+ * @param dropdown the dropdown menu
+ * @param keyObject the property key
+ */
 function disableAggrFunc(dropdown, keyObject) {
 
     var propertyDropdown = $(dropdown);
@@ -822,15 +903,17 @@ function initializeAggregateFunctionMenus(keys) {
     var vertexAggrFuncs = $("#vertexAggrFuncs");
     var edgeAggrFuncs = $("#edgeAggrFuncs");
 
-    //remove the current keys from the property key menus
+    // remove the current keys from the property key menus
     var vertexSelect = vertexAggrFuncs.find("dd .multiSelect ul").empty();
     var edgeSelect = edgeAggrFuncs.find("dd .multiSelect ul").empty();
 
+    // add count as default aggregation function
     var vertexLabelHtml = '' +
         '<li><input type ="checkbox" value ="count" class="checkbox"/> count</li>';
 
     vertexSelect.append(vertexLabelHtml);
 
+    // add aggregation functions for each numerical property
     for (var i = 0; i < keys.vertexKeys.length; i++) {
         var vertexKey = keys.vertexKeys[i];
         if (vertexKey.numerical == true) {
@@ -843,11 +926,12 @@ function initializeAggregateFunctionMenus(keys) {
         }
     }
 
-
+    // add count as default aggregation function
     var edgeLabelHtml = '<li><input type ="checkbox" value ="count" class="checkbox"/>count</li>';
 
     edgeSelect.append(edgeLabelHtml);
 
+    // add aggregation functions for each numerical property
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
         if (edgeKey.numerical == true) {
@@ -860,15 +944,15 @@ function initializeAggregateFunctionMenus(keys) {
         }
     }
 
-    //show the propertyKeys menus
+    // show the propertyKeys menus
     vertexAggrFuncs.show();
     edgeAggrFuncs.show()
 
-    //remove the currently selected keys, they are saved in <span> elements
+    // remove the currently selected keys, they are saved in <span> elements
     vertexAggrFuncs.find('.multiSel').children().remove();
     edgeAggrFuncs.find('.multiSel').children().remove();
 
-    //show instructions
+    // show instructions
     vertexAggrFuncs.find('.instruction').show();
     edgeAggrFuncs.find('.instruction').show();
 
@@ -888,15 +972,15 @@ function hideElements() {
 
 /**
  * get the selected database
- * @returns selected database name
+ * @returns {String} selected database name
  */
 function getSelectedDatabase() {
     return $("#databases").find("option:selected").text();
 }
 
 /**
- * get the selected vertex keys
- * @returns array of selected vertex keys
+ *  * get the selected vertex keys
+ * @returns [String] selected vertex keys
  */
 function getSelectedVertexKeys() {
     return $.map(
@@ -908,7 +992,7 @@ function getSelectedVertexKeys() {
 
 /**
  * get the selected edge keys
- * @returns array of selected edge keys
+ * @returns [String] selected edge keys
  */
 function getSelectedEdgeKeys() {
     return $.map(
@@ -920,7 +1004,7 @@ function getSelectedEdgeKeys() {
 
 /**
  * get the selected vertex aggregate function
- * @returns name of the selected vertex aggregate function
+ * @returns {String} name of the selected vertex aggregate function
  */
 function getSelectedVertexAggregateFunctions() {
     return $.map(
@@ -932,7 +1016,7 @@ function getSelectedVertexAggregateFunctions() {
 
 /**
  * get the selected edge aggregate function
- * @returns name of the selected edge aggregate function
+ * @returns {String} name of the selected edge aggregate function
  */
 function getSelectedEdgeAggregateFunctions() {
     return $.map(
@@ -942,7 +1026,10 @@ function getSelectedEdgeAggregateFunctions() {
         });
 }
 
-
+/**
+ * get the selected vertex filters
+ * @returns [String] selected edge filters
+ */
 function getSelectedVertexFilters() {
     if ($('#showFilters').is(':checked')) {
         return $.map(
@@ -955,6 +1042,10 @@ function getSelectedVertexFilters() {
     }
 }
 
+/**
+ * get the selected edge filters
+ * @returns [String] selected edge filters
+ */
 function getSelectedEdgeFilters() {
     if ($('#showFilters').is(':checked')) {
         return $.map(
@@ -978,6 +1069,9 @@ function isValidRequest(request) {
         (request.vertexKeys.length > 0);
 }
 
+/**
+ * Reset the page on reload
+ */
 function resetPage() {
     $("#showFilters").prop("checked", false);
     $("#showEdgeLabels").prop("checked", false);
@@ -985,6 +1079,10 @@ function resetPage() {
     $("#databases").val("default");
 }
 
+/**
+ * Generate a random color for each label
+ * @param labels array of labels
+ */
 function generateRandomColors(labels) {
     colorMap = {};
     labels.forEach(function (label) {
@@ -1000,6 +1098,14 @@ function generateRandomColors(labels) {
     });
 }
 
+/**
+ * Get the label of the given element, either the default label ('label') or the value of the
+ * given property key
+ * @param element the element whose label is needed
+ * @param key key of the non-default label
+ * @param useDefaultLabel boolean specifying if the default label shall be used
+ * @returns {string} the label of the element
+ */
 function getLabel(element, key, useDefaultLabel) {
     var label = "";
     if (!useDefaultLabel && key != "label") {

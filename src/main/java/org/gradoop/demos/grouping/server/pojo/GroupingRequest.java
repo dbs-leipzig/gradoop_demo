@@ -39,8 +39,14 @@ public class GroupingRequest {
    */
   private String[] edgeKeys;
 
+  /**
+   * array of vertex filters
+   */
   private String[] vertexFilters;
 
+  /**
+   * array of edge filters
+   */
   private String[] edgeFilters;
 
   /**
@@ -99,6 +105,24 @@ public class GroupingRequest {
   }
 
   /**
+   * set the vertex filters
+   *
+   * @param vertexFilters vertex filters
+   */
+  public void setVertexFilters(String[] vertexFilters) {
+    this.vertexFilters = vertexFilters;
+  }
+
+  /**
+   * set the edge filters
+   *
+   * @param edgeFilters edge filters
+   */
+  public void setEdgeFilters(String[] edgeFilters) {
+    this.edgeFilters = edgeFilters;
+  }
+
+  /**
    * get the database name
    *
    * @return database name
@@ -143,38 +167,37 @@ public class GroupingRequest {
     return edgeAggrFuncs;
   }
 
+
+  /**
+   * get the vertex filters
+   *
+   * @return vertex filters
+   */
+  public String[] getVertexFilters() {
+    return vertexFilters;
+  }
+
+  /**
+   * get the edge filters
+   *
+   * @return edge filters
+   */
+  public String[] getEdgeFilters() {
+    return edgeFilters;
+  }
+
   /**
    * Returns a human readable representation of the request.
    *
    * @return human readable string
    */
+
   @Override
   public String toString() {
-    return
-      "DB name: " + dbName + "\n" +
-      "Vertex keys: " + Arrays.toString(vertexKeys) + "\n" +
-      "Edge keys: " + Arrays.toString(edgeKeys) + "\n" +
-      "Vertex aggrFunc: " + vertexAggrFuncs + "\n" +
-      "Edge aggrFunc: " + edgeAggrFuncs + "\n" +
-      "Vertex filters: " + Arrays.toString(vertexFilters) + "\n" +
-      "Edge filters: " + Arrays.toString(edgeFilters) + "\n";
-
-
-  }
-
-  public String[] getVertexFilters() {
-    return vertexFilters;
-  }
-
-  public void setVertexFilters(String[] vertexFilters) {
-    this.vertexFilters = vertexFilters;
-  }
-
-  public String[] getEdgeFilters() {
-    return edgeFilters;
-  }
-
-  public void setEdgeFilters(String[] edgeFilters) {
-    this.edgeFilters = edgeFilters;
+    return "DB name: " + dbName + "\n" + "Vertex keys: " + Arrays.toString(vertexKeys) + "\n" +
+      "Edge keys: " + Arrays.toString(edgeKeys) + "\n" + "Vertex aggrFunc: " + vertexAggrFuncs +
+      "\n" + "Edge aggrFunc: " + edgeAggrFuncs + "\n" + "Vertex filters: " +
+      Arrays.toString(vertexFilters) + "\n" + "Edge filters: " + Arrays.toString(edgeFilters) +
+      "\n";
   }
 }

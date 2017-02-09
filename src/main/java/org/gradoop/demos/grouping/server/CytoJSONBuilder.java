@@ -29,8 +29,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by teichmann on 22.09.15.
+ * Converts a logical graph or a read JSON into a cytoscape-conform JSON.
  */
+
 public class CytoJSONBuilder {
   /**
    * Key for vertex, edge and graph id.
@@ -77,8 +78,17 @@ public class CytoJSONBuilder {
    */
   private static final String EDGE_TARGET = "target";
 
-  // this actually only returns single graphs, but i will change this later
-  String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws Exception {
+  /**
+   * Takes a logical graph and converts it into a cytoscape-conform JSON.
+   *
+   * @param graphHead the graph head
+   * @param vertices  the vertices
+   * @param edges     the edges
+   * @return a cytoscape-conform JSON
+   * @throws JSONException if the creation of the JSON fails
+   */
+  String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws
+    JSONException {
 
     JSONObject returnedJSON = new JSONObject();
 
@@ -89,7 +99,7 @@ public class CytoJSONBuilder {
     JSONObject graphProperties = new JSONObject();
     graphObject.put(IDENTIFIER, graphHead.getId());
     graphObject.put(LABEL, graphHead.getLabel());
-    if(graphHead.getProperties() != null) {
+    if (graphHead.getProperties() != null) {
       for (Property prop : graphHead.getProperties()) {
         graphProperties.put(prop.getKey(), prop.getValue());
       }
@@ -107,7 +117,7 @@ public class CytoJSONBuilder {
       vertexData.put(IDENTIFIER, vertex.getId());
       vertexData.put(LABEL, vertex.getLabel());
       JSONObject vertexProperties = new JSONObject();
-      if(vertex.getProperties() != null) {
+      if (vertex.getProperties() != null) {
         for (Property prop : vertex.getProperties()) {
           vertexProperties.put(prop.getKey(), prop.getValue());
         }
@@ -127,7 +137,7 @@ public class CytoJSONBuilder {
       edgeData.put(IDENTIFIER, edge.getId());
       edgeData.put(LABEL, edge.getLabel());
       JSONObject edgeProperties = new JSONObject();
-      if(edge.getProperties() != null) {
+      if (edge.getProperties() != null) {
         for (Property prop : edge.getProperties()) {
           edgeProperties.put(prop.getKey(), prop.getValue());
         }
@@ -143,6 +153,15 @@ public class CytoJSONBuilder {
 
   }
 
+  /**
+   * Takes a JSON containing a logical graph and converts it into a cytoscape-conform JSON.
+   *
+   * @param graph    graph JSON object
+   * @param vertices vertices JSON array
+   * @param edges    edges JSON array
+   * @return cytoscape-conform JSON
+   * @throws JSONException if JSON creation fails
+   */
   String getJSON(JSONObject graph, JSONArray vertices, JSONArray edges) throws JSONException {
 
     JSONObject returnedJSON = new JSONObject();
@@ -162,7 +181,7 @@ public class CytoJSONBuilder {
     returnedJSON.put(GRAPHS, graphArray);
 
     JSONArray vertexArray = new JSONArray();
-    for (int i=0;i<vertices.length();i++) {
+    for (int i = 0; i < vertices.length(); i++) {
       JSONObject vertex = vertices.getJSONObject(i);
 
       JSONObject vertexData = new JSONObject();
@@ -179,7 +198,7 @@ public class CytoJSONBuilder {
     returnedJSON.put(VERTICES, vertexArray);
 
     JSONArray edgeArray = new JSONArray();
-    for (int i=0;i<edges.length();i++) {
+    for (int i = 0; i < edges.length(); i++) {
       JSONObject edge = edges.getJSONObject(i);
 
       JSONObject edgeData = new JSONObject();
