@@ -51,11 +51,12 @@ $(document).ready(function () {
 
     // get the available databases from the org.gradoop.demos.grouping.server
     // if the request is a success, add them to the database propertyKeys menu
-    $.get("http:// localhost:2342/databases/")
+    $.get("http://localhost:2342/databases/")
         .done(initializeDatabaseMenu)
         .fail(function (jqXHR, textStatus, errorThrown) {
             alert(errorThrown);
         });
+
 
     // when the "Show whole graph" button is clicked, send a request to the server for the whole
     // graph
@@ -65,7 +66,7 @@ $(document).ready(function () {
         $("#loading").show();
 
         var databaseName = getSelectedDatabase();
-        $.post("http:// localhost:2342/graph/" + databaseName)
+        $.post("http://localhost:2342/graph/" + databaseName)
             .done(function (data) {
                 showGraph(data, true);
             })
@@ -96,7 +97,7 @@ $(document).ready(function () {
             $("#loading").show();
 
             $.ajax({
-                url: "http:// localhost:2342/data/",
+                url: "http://localhost:2342/data/",
                 datatype: "text",
                 type: "post",
                 contentType: "application/json",
@@ -474,7 +475,7 @@ function initializeDatabaseMenu(databases) {
 function sendKeyRequest() {
     var databaseName = getSelectedDatabase();
     if (databaseName != "Select a database") {
-        $.post("http:// localhost:2342/keys/" + databaseName)
+        $.post("http://localhost:2342/keys/" + databaseName)
             .done(initializeOtherMenus)
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -868,7 +869,7 @@ function enableAggrFunc(dropdown, keyObject) {
 }
 
 /**
- * Diable the aggregation functions of a property key in the dropdown menu
+ * Disable the aggregation functions of a property key in the dropdown menu
  * @param dropdown the dropdown menu
  * @param keyObject the property key
  */
@@ -972,7 +973,7 @@ function hideElements() {
 
 /**
  * get the selected database
- * @returns {String} selected database name
+ * @returns selected database name
  */
 function getSelectedDatabase() {
     return $("#databases").find("option:selected").text();
@@ -980,7 +981,7 @@ function getSelectedDatabase() {
 
 /**
  *  * get the selected vertex keys
- * @returns [String] selected vertex keys
+ * @returns selected vertex keys
  */
 function getSelectedVertexKeys() {
     return $.map(
@@ -992,7 +993,7 @@ function getSelectedVertexKeys() {
 
 /**
  * get the selected edge keys
- * @returns [String] selected edge keys
+ * @returns selected edge keys
  */
 function getSelectedEdgeKeys() {
     return $.map(
@@ -1004,7 +1005,7 @@ function getSelectedEdgeKeys() {
 
 /**
  * get the selected vertex aggregate function
- * @returns {String} name of the selected vertex aggregate function
+ * @returns  name of the selected vertex aggregate function
  */
 function getSelectedVertexAggregateFunctions() {
     return $.map(
@@ -1016,7 +1017,7 @@ function getSelectedVertexAggregateFunctions() {
 
 /**
  * get the selected edge aggregate function
- * @returns {String} name of the selected edge aggregate function
+ * @returns name of the selected edge aggregate function
  */
 function getSelectedEdgeAggregateFunctions() {
     return $.map(
@@ -1028,7 +1029,7 @@ function getSelectedEdgeAggregateFunctions() {
 
 /**
  * get the selected vertex filters
- * @returns [String] selected edge filters
+ * @returns selected edge filters
  */
 function getSelectedVertexFilters() {
     if ($('#showFilters').is(':checked')) {
@@ -1044,7 +1045,7 @@ function getSelectedVertexFilters() {
 
 /**
  * get the selected edge filters
- * @returns [String] selected edge filters
+ * @returns selected edge filters
  */
 function getSelectedEdgeFilters() {
     if ($('#showFilters').is(':checked')) {
@@ -1062,7 +1063,7 @@ function getSelectedEdgeFilters() {
 /**
  * Checks if a grouping request is valid (all fields are set).
  * @param request
- * @returns {boolean} true, if the request was valid
+ * @returns true, if the request was valid
  */
 function isValidRequest(request) {
     return (request.dbName != "Select a database") &&
@@ -1104,7 +1105,7 @@ function generateRandomColors(labels) {
  * @param element the element whose label is needed
  * @param key key of the non-default label
  * @param useDefaultLabel boolean specifying if the default label shall be used
- * @returns {string} the label of the element
+ * @returns the label of the element
  */
 function getLabel(element, key, useDefaultLabel) {
     var label = "";
