@@ -112,7 +112,11 @@ $(document).ready(function () {
     });
 });
 
-// function called when the server returns the data
+/**
+ * function called when the server returns the data
+ * @param data graph data
+ * @param {Boolean} useDefaultLabel boolean value, true if default label shall be used
+ */
 function showGraph(data, useDefaultLabel) {
 
     // lists of nodes and edges
@@ -344,11 +348,14 @@ function showGraph(data, useDefaultLabel) {
                         for (var key in this.data()) {
                             if (key != "properties" && key != "pie_parameters") {
                                 qtipText += key + " : " + this.data(key) + "<br>";
+
                             }
                         }
                         var properties = this.data("properties");
                         for (var property in properties) {
-                            qtipText += property + " : " + properties[property] + "<br>";
+                            if (properties.hasOwnProperty(property)) {
+                                qtipText += property + " : " + properties[property] + "<br>";
+                            }
                         }
                         return qtipText;
                     },
@@ -443,7 +450,7 @@ function initializeDatabaseMenu(databases) {
         var name = databases[i];
         databaseSelect.append('<option value="' + name + '">' + name + '</option>');
     }
-    databaseSelect.children().on("click", sendKeyRequest);
+    databaseSelect.find("option").on("click", sendKeyRequest);
 
     // on click, the dropdown menus open, this has to be done here so it is done only once
     $(".dropDown").find("dt a").on("click", function () {
@@ -529,8 +536,8 @@ function initializeFilterKeyMenus(keys) {
     vertexFilters.find('.instruction').hide();
 
     // add one entry per vertex label
-    for (var i = 0; i < keys.edgeLabels.length; i++) {
-        var edgeLabel = keys.edgeLabels[i];
+    for (var j = 0; j < keys.edgeLabels.length; j++) {
+        var edgeLabel = keys.edgeLabels[j];
 
         edgeFilterSelect.append(
             '<li><input type="checkbox" value="' + edgeLabel + '"' +
@@ -587,21 +594,21 @@ function initializePropertyKeyMenus(keys) {
 
     vertexSelect.append(vertexLabelHtml);
 
-    for (var i = 0; i < keys.vertexKeys.length; i++) {
-        var vertexKey = keys.vertexKeys[i];
-        var propertyLabel = "&lt;";
+    for (var i1 = 0; i1 < keys.vertexKeys.length; i1++) {
+        var vertexKey = keys.vertexKeys[i1];
+        var vertexPropertyLabel = "&lt;";
         // insert an entry into the vertex filter map
         createVertexFilterMapEntry(vertexKey);
-        for (var j = 0; j < vertexKey.labels.length; j++) {
-            propertyLabel += vertexKey.labels[j];
-            if (j < vertexKey.labels.length - 1) {
-                propertyLabel += ", ";
+        for (var j1 = 0; j1 < vertexKey.labels.length; j1++) {
+            vertexPropertyLabel += vertexKey.labels[j1];
+            if (j1 < vertexKey.labels.length - 1) {
+                vertexPropertyLabel += ", ";
             }
         }
-        propertyLabel += "&gt;." + vertexKey.name;
+        vertexPropertyLabel += "&gt;." + vertexKey.name;
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexKey.name + '" ' +
-            ' class="checkbox"/>' + propertyLabel + '</li>';
+            ' class="checkbox"/>' + vertexPropertyLabel + '</li>';
         vertexSelect.append(vertexHtml);
     }
 
@@ -612,19 +619,19 @@ function initializePropertyKeyMenus(keys) {
 
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
-        var propertyLabel = '&lt;';
+        var edgePropertyLabel = '&lt;';
         // insert an entry into the edge filter map
         createEdgeFilterMapEntry(edgeKey);
         for (var j = 0; j < edgeKey.labels.length; j++) {
-            propertyLabel += edgeKey.labels[j];
+            edgePropertyLabel += edgeKey.labels[j];
             if (j < edgeKey.labels.length - 1) {
-                propertyLabel += ", ";
+                edgePropertyLabel += ", ";
             }
         }
-        propertyLabel += '&gt;.' + edgeKey.name;
+        edgePropertyLabel += '&gt;.' + edgeKey.name;
         var edgeHtml =
             '<li><input type="checkbox" value="' + edgeKey.name + '" ' +
-            ' class="checkbox"/>' + propertyLabel + '</li>';
+            ' class="checkbox"/>' + edgePropertyLabel + '</li>';
         edgeSelect.append(edgeHtml);
     }
 
@@ -661,7 +668,7 @@ function createVertexFilterMapEntry(vertexKey) {
     for (var i = 0; i < vertexKey.labels.length; i++) {
         var label = vertexKey.labels[i];
         vertexKeyObject.support++;
-        if (vertexFilterMap[label] == null) {
+        if (vertexFilterMap[label] == undefined) {
             var array = [];
             array.push(vertexKeyObject);
             vertexFilterMap[label] = array;
@@ -747,33 +754,34 @@ function setEdgeLabel() {
  */
 
 function vertexFilterSelected() {
+    var label, keyObject, propertyKeys, aggrFuncs;
     if ($(this).is(':checked')) {
-        var label = $(this).val();
+        label = $(this).val();
         for (var i = 0; i < vertexFilterMap[label].length; i++) {
 
-            var keyObject = vertexFilterMap[label][i];
+            keyObject = vertexFilterMap[label][i];
             keyObject.support++;
 
-            var propertyKeys = '#vertexPropertyKeys';
+            propertyKeys = '#vertexPropertyKeys';
             enablePropertyKey(propertyKeys, keyObject);
 
 
-            var aggrFuncs = '#vertexAggrFuncs';
+            aggrFuncs = '#vertexAggrFuncs';
             enableAggrFunc(aggrFuncs, keyObject);
         }
     } else {
-        var label = $(this).val();
-        for (var i = 0; i < vertexFilterMap[label].length; i++) {
+        label = $(this).val();
+        for (var j = 0; j < vertexFilterMap[label].length; j++) {
 
-            var keyObject = vertexFilterMap[label][i];
+            keyObject = vertexFilterMap[label][j];
             keyObject.support--;
 
             if (keyObject.support == 0) {
-                var propertyKeys = '#vertexPropertyKeys';
+                propertyKeys = '#vertexPropertyKeys';
                 disablePropertyKey(propertyKeys, keyObject);
 
 
-                var aggrFuncs = '#vertexAggrFuncs';
+                aggrFuncs = '#vertexAggrFuncs';
                 disableAggrFunc(aggrFuncs, keyObject);
             }
         }
@@ -784,32 +792,33 @@ function vertexFilterSelected() {
  * function called when a edge filter was selected
  */
 function edgeFilterSelected() {
+    var label, keyObject, propertyKeys, aggrFuncs;
     if ($(this).is(':checked')) {
-        var label = $(this).val();
+        label = $(this).val();
         for (var i = 0; i < edgeFilterMap[label].length; i++) {
 
-            var keyObject = edgeFilterMap[label][i];
+            keyObject = edgeFilterMap[label][i];
             keyObject.support++;
 
-            var propertyKeys = '#edgePropertyKeys';
+            propertyKeys = '#edgePropertyKeys';
             enablePropertyKey(propertyKeys, keyObject);
 
 
-            var aggrFuncs = '#edgeAggrFuncs';
+            aggrFuncs = '#edgeAggrFuncs';
             enableAggrFunc(aggrFuncs, keyObject);
         }
     } else {
-        var label = $(this).val();
-        for (var i = 0; i < edgeFilterMap[label].length; i++) {
+        label = $(this).val();
+        for (var j = 0; j < edgeFilterMap[label].length; j++) {
 
-            var keyObject = edgeFilterMap[label][i];
+            keyObject = edgeFilterMap[label][j];
             keyObject.support--;
 
             if (keyObject.support == 0) {
-                var propertyKeys = '#edgePropertyKeys';
+                propertyKeys = '#edgePropertyKeys';
                 disablePropertyKey(propertyKeys, keyObject);
 
-                var aggrFuncs = '#edgeAggrFuncs';
+                aggrFuncs = '#edgeAggrFuncs';
                 disableAggrFunc(aggrFuncs, keyObject);
             }
         }
@@ -915,14 +924,14 @@ function initializeAggregateFunctionMenus(keys) {
     vertexSelect.append(vertexLabelHtml);
 
     // add aggregation functions for each numerical property
-    for (var i = 0; i < keys.vertexKeys.length; i++) {
-        var vertexKey = keys.vertexKeys[i];
+    for (var i1 = 0; i1 < keys.vertexKeys.length; i1++) {
+        var vertexKey = keys.vertexKeys[i1];
         if (vertexKey.numerical == true) {
-            for (var j = 0; j < aggrPrefixes.length; j++) {
-                var aggrFunc = aggrPrefixes[j] + vertexKey.name;
-                var html = '<li><input type="checkbox" value="' + aggrFunc +
-                    '" class="checkbox"/>' + aggrFunc + '</li>';
-                vertexSelect.append(html);
+            for (var j1 = 0; j1 < aggrPrefixes.length; j1++) {
+                var vertexAggrFunc = aggrPrefixes[j1] + vertexKey.name;
+                var vertexHtml = '<li><input type="checkbox" value="' + vertexAggrFunc +
+                    '" class="checkbox"/>' + vertexAggrFunc + '</li>';
+                vertexSelect.append(vertexHtml);
             }
         }
     }
@@ -933,21 +942,21 @@ function initializeAggregateFunctionMenus(keys) {
     edgeSelect.append(edgeLabelHtml);
 
     // add aggregation functions for each numerical property
-    for (var i = 0; i < keys.edgeKeys.length; i++) {
-        var edgeKey = keys.edgeKeys[i];
+    for (var i2 = 0; i2 < keys.edgeKeys.length; i2++) {
+        var edgeKey = keys.edgeKeys[i2];
         if (edgeKey.numerical == true) {
-            for (var j = 0; j < aggrPrefixes.length; j++) {
-                var aggrFunc = aggrPrefixes[j] + edgeKey.name;
-                var html = '<li><input type="checkbox" value="' + aggrFunc +
-                    '" class="checkbox"/>' + aggrFunc + '</li>';
-                edgeSelect.append(html);
+            for (var j2 = 0; j2 < aggrPrefixes.length; j2++) {
+                var edgeAggrFunc = aggrPrefixes[j2] + edgeKey.name;
+                var edgeHtml = '<li><input type="checkbox" value="' + edgeAggrFunc +
+                    '" class="checkbox"/>' + edgeAggrFunc + '</li>';
+                edgeSelect.append(edgeHtml);
             }
         }
     }
 
     // show the propertyKeys menus
     vertexAggrFuncs.show();
-    edgeAggrFuncs.show()
+    edgeAggrFuncs.show();
 
     // remove the currently selected keys, they are saved in <span> elements
     vertexAggrFuncs.find('.multiSel').children().remove();
@@ -1029,7 +1038,7 @@ function getSelectedEdgeAggregateFunctions() {
 
 /**
  * get the selected vertex filters
- * @returns selected edge filters
+ * @returns {Array} selected edge filters
  */
 function getSelectedVertexFilters() {
     if ($('#showFilters').is(':checked')) {
@@ -1045,7 +1054,7 @@ function getSelectedVertexFilters() {
 
 /**
  * get the selected edge filters
- * @returns selected edge filters
+ * @returns {Array} selected edge filters
  */
 function getSelectedEdgeFilters() {
     if ($('#showFilters').is(':checked')) {
@@ -1063,11 +1072,11 @@ function getSelectedEdgeFilters() {
 /**
  * Checks if a grouping request is valid (all fields are set).
  * @param request
- * @returns true, if the request was valid
+ * @returns {boolean} true, if the request was valid
  */
 function isValidRequest(request) {
-    return (request.dbName != "Select a database") &&
-        (request.vertexKeys.length > 0);
+    return ((request.dbName != "Select a database") &&
+        (request.vertexKeys.length > 0));
 }
 
 /**
@@ -1105,7 +1114,7 @@ function generateRandomColors(labels) {
  * @param element the element whose label is needed
  * @param key key of the non-default label
  * @param useDefaultLabel boolean specifying if the default label shall be used
- * @returns the label of the element
+ * @returns {string} the label of the element
  */
 function getLabel(element, key, useDefaultLabel) {
     var label = "";
