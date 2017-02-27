@@ -68,7 +68,7 @@ $(document).ready(function () {
         var databaseName = getSelectedDatabase();
         $.post("http://localhost:2342/graph/" + databaseName)
             .done(function (data) {
-                showGraph(data, true);
+                showGraph(data, true, false);
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -103,7 +103,7 @@ $(document).ready(function () {
                 contentType: "application/json",
                 data: JSON.stringify(request),
                 success: function (data) {
-                    showGraph(data, false);
+                    showGraph(data, false, true);
                 }
             });
         } else {
@@ -117,7 +117,7 @@ $(document).ready(function () {
  * @param data graph data
  * @param {Boolean} useDefaultLabel boolean value, true if default label shall be used
  */
-function showGraph(data, useDefaultLabel) {
+function showGraph(data, useDefaultLabel, useForceLayout) {
 
     // lists of nodes and edges
     var nodes = data.nodes;
@@ -165,6 +165,8 @@ function showGraph(data, useDefaultLabel) {
     rows += "<tr><td>Edge Count</td><td>:</td><td>"
         + edges.length + "</td></tr>";
     $("#stats").html(rows);
+
+    var layout = chooseLayout(useForceLayout);
 
     // start cytoscape
     $(function () {
@@ -321,6 +323,8 @@ function showGraph(data, useDefaultLabel) {
                 edges: edges
             },
 
+            layout: layout,
+
             ready: function () {
                 window.cy = this;
                 cy.elements().unselectify();
@@ -367,72 +371,6 @@ function showGraph(data, useDefaultLabel) {
                         classes: "MyQtip"
                     }
                 });
-                // options for the force layout
-                var options = {
-                    name: "cose",
-
-                    // called on `layoutready`
-                    ready: function () {
-                    },
-
-                    // called on `layoutstop`
-                    stop: function () {
-                    },
-
-                    // whether to animate while running the layout
-                    animate: true,
-
-                    // number of iterations between consecutive screen positions update (0 ->
-                    // only updated on the end)
-                    refresh: 4,
-
-                    // whether to fit the network view after when done
-                    fit: true,
-
-                    // padding on fit
-                    padding: 30,
-
-                    // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-                    boundingBox: undefined,
-
-                    // whether to randomize node positions on the beginning
-                    randomize: true,
-
-                    // whether to use the JS console to print debug messages
-                    debug: false,
-
-                    // node repulsion (non overlapping) multiplier
-                    nodeRepulsion: 8000000,
-
-                    // node repulsion (overlapping) multiplier
-                    nodeOverlap: 10,
-
-                    // ideal edge (non nested) length
-                    idealEdgeLength: 1,
-
-                    // divisor to compute edge forces
-                    edgeElasticity: 100,
-
-                    // nesting factor (multiplier) to compute ideal edge length for nested edges
-                    nestingFactor: 5,
-
-                    // gravity force (constant)
-                    gravity: 250,
-
-                    // maximum number of iterations to perform
-                    numIter: 100,
-
-                    // initial temperature (maximum node displacement)
-                    initialTemp: 200,
-
-                    // cooling factor (how the temperature is reduced between consecutive iterations
-                    coolingFactor: 0.95,
-
-                    // lower temperature threshold (below this point the layout will end)
-                    minTemp: 1.0
-                };
-                cy.layout(options);
-
             }
         });
 
@@ -1124,4 +1062,90 @@ function getLabel(element, key, useDefaultLabel) {
         label += element.data("label");
     }
     return label;
+}
+
+function chooseLayout(useForceLayout) {
+// options for the force layout
+    var cose = {
+        name: "cose",
+
+        // called on `layoutready`
+        ready: function () {
+        },
+
+        // called on `layoutstop`
+        stop: function () {
+        },
+
+        // whether to animate while running the layout
+        animate: true,
+
+        // number of iterations between consecutive screen positions update (0 ->
+        // only updated on the end)
+        refresh: 4,
+
+        // whether to fit the network view after when done
+        fit: true,
+
+        // padding on fit
+        padding: 30,
+
+        // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+        boundingBox: undefined,
+
+        // whether to randomize node positions on the beginning
+        randomize: true,
+
+        // whether to use the JS console to print debug messages
+        debug: false,
+
+        // node repulsion (non overlapping) multiplier
+        nodeRepulsion: 8000000,
+
+        // node repulsion (overlapping) multiplier
+        nodeOverlap: 10,
+
+        // ideal edge (non nested) length
+        idealEdgeLength: 1,
+
+        // divisor to compute edge forces
+        edgeElasticity: 100,
+
+        // nesting factor (multiplier) to compute ideal edge length for nested edges
+        nestingFactor: 5,
+
+        // gravity force (constant)
+        gravity: 250,
+
+        // maximum number of iterations to perform
+        numIter: 100,
+
+        // initial temperature (maximum node displacement)
+        initialTemp: 200,
+
+        // cooling factor (how the temperature is reduced between consecutive iterations
+        coolingFactor: 0.95,
+
+        // lower temperature threshold (below this point the layout will end)
+        minTemp: 1.0
+    };
+
+    var random = {
+        name: "random",
+        fit: false, // whether to fit to viewport
+        padding: 30, // fit padding
+        boundingBox: {x1:0, y1:0, w:5000, h:5000}, // constrain layout bounds; { x1, y1, x2, y2 }
+        // or { x1, y1, w, h }
+        animate: false, // whether to transition the node positions
+        animationDuration: 0, // duration of animation in ms if enabled
+        animationEasing: undefined, // easing of animation if enabled
+        ready: undefined, // callback on layoutready
+        stop: undefined // callback on layoutstop
+    };
+
+    if(useForceLayout) {
+        return cose;
+    } else {
+        return random;
+    }
 }

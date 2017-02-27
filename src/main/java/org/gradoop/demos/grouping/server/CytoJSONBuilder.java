@@ -87,7 +87,7 @@ public class CytoJSONBuilder {
    * @return a cytoscape-conform JSON
    * @throws JSONException if the creation of the JSON fails
    */
-  String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws
+  static String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws
     JSONException {
 
     JSONObject returnedJSON = new JSONObject();
@@ -162,7 +162,8 @@ public class CytoJSONBuilder {
    * @return cytoscape-conform JSON
    * @throws JSONException if JSON creation fails
    */
-  String getJSON(JSONObject graph, JSONArray vertices, JSONArray edges) throws JSONException {
+  static String getJSON(JSONObject graph, JSONArray vertices, JSONArray edges) throws
+    JSONException {
 
     JSONObject returnedJSON = new JSONObject();
 

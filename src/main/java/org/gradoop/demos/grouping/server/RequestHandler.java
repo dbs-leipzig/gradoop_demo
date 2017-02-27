@@ -30,12 +30,10 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.gradoop.common.model.impl.id.GradoopId;
 import org.gradoop.common.model.impl.pojo.Edge;
 import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
-import org.gradoop.flink.io.impl.json.JSONDataSource;
-import org.gradoop.flink.model.impl.GraphCollection;
+import org.gradoop.flink.io.impl.csv.CSVDataSource;
 import org.gradoop.flink.model.impl.LogicalGraph;
 import org.gradoop.flink.model.impl.operators.grouping.Grouping;
 import org.gradoop.flink.model.impl.operators.grouping.GroupingStrategy;
@@ -51,11 +49,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -91,11 +86,7 @@ public class RequestHandler {
 
     // get all subfolders of "/data/", they are considered as databases
     File dataFolder = new File(RequestHandler.class.getResource("/data/").getFile());
-    String[] databases = dataFolder.list(new FilenameFilter() {
-      public boolean accept(File current, String name) {
-        return new File(current, name).isDirectory();
-      }
-    });
+    String[] databases = dataFolder.list((current, name) -> new File(current, name).isDirectory());
 
     // return the found databases to the client
     assert databases != null;
@@ -144,16 +135,11 @@ public class RequestHandler {
    * @param databaseName name of the database
    * @return JSONObject containing property keys and labels
    */
-  private JSONObject computeKeysAndLabels(String databaseName) {
-    // load the database
-    String graphPath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/graphs.json").getPath();
-    String vertexPath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/vertices.json").getPath();
-    String edgePath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/edges.json").getPath();
+  private JSONObject computeKeysAndLabels(String databaseName) throws IOException {
 
-    JSONDataSource source = new JSONDataSource(graphPath, vertexPath, edgePath, config);
+    String path = RequestHandler.class.getResource("/data/" + databaseName).getPath();
+
+    CSVDataSource source = new CSVDataSource(path, config);
 
     LogicalGraph graph = source.getLogicalGraph();
 
@@ -207,7 +193,7 @@ public class RequestHandler {
   private JSONArray getVertexKeys(LogicalGraph graph) throws Exception {
 
     List<Tuple3<Set<String>, String, Boolean>> vertexKeys = graph.getVertices()
-      .flatMap(new PropertyKeyMapper<Vertex>())
+      .flatMap(new PropertyKeyMapper<>())
       .groupBy(1)
       .reduceGroup(new LabelGroupReducer())
       .collect();
@@ -227,7 +213,7 @@ public class RequestHandler {
   private JSONArray getEdgeKeys(LogicalGraph graph) throws Exception {
 
     List<Tuple3<Set<String>, String, Boolean>> edgeKeys = graph.getEdges()
-      .flatMap(new PropertyKeyMapper<Edge>())
+      .flatMap(new PropertyKeyMapper<>())
       .groupBy(1)
       .reduceGroup(new LabelGroupReducer())
       .collect();
@@ -251,9 +237,7 @@ public class RequestHandler {
     for(Tuple3<Set<String>, String, Boolean> key : keys) {
       JSONObject keyObject = new JSONObject();
       JSONArray labels = new JSONArray();
-      for(String label : key.f0) {
-        labels.put(label);
-      }
+      key.f0.forEach(labels::put);
       keyObject.put("labels", labels);
       keyObject.put("name", key.f1);
       keyObject.put("numerical", key.f2);
@@ -270,13 +254,16 @@ public class RequestHandler {
    * @throws Exception if the computation fails
    */
   private JSONArray getVertexLabels(LogicalGraph graph) throws Exception {
-    Set<String> vertexLabels = graph.getVertices()
-      .map(new LabelMapper<Vertex>())
+    List<Set<String>> vertexLabels = graph.getVertices()
+      .map(new LabelMapper<>())
       .reduce(new LabelReducer())
-      .collect()
-      .get(0);
+      .collect();
 
-    return buildArrayFromLabels(vertexLabels);
+    if(vertexLabels.size() > 0) {
+      return buildArrayFromLabels(vertexLabels.get(0));
+    } else {
+      return new JSONArray();
+    }
   }
 
   /**
@@ -287,13 +274,16 @@ public class RequestHandler {
    * @throws Exception if the computation fails
    */
   private JSONArray getEdgeLabels(LogicalGraph graph ) throws Exception {
-    Set<String> edgeLabels = graph.getEdges()
-      .map(new LabelMapper<Edge>())
+    List<Set<String>> edgeLabels = graph.getEdges()
+      .map(new LabelMapper<>())
       .reduce(new LabelReducer())
-      .collect()
-      .get(0);
+      .collect();
 
-    return buildArrayFromLabels(edgeLabels);
+    if(edgeLabels.size() > 0) {
+      return buildArrayFromLabels(edgeLabels.get(0));
+    } else {
+      return new JSONArray();
+    }
   }
 
   /**
@@ -304,9 +294,7 @@ public class RequestHandler {
    */
   private JSONArray buildArrayFromLabels(Set<String> labels) {
     JSONArray labelArray = new JSONArray();
-    for(String label : labels) {
-       labelArray.put(label);
-    }
+    labels.forEach(labelArray::put);
     return labelArray;
   }
 
@@ -322,42 +310,19 @@ public class RequestHandler {
   @POST
   @Path("/graph/{databaseName}")
   @Produces("application/json;charset=utf-8")
-  public Response getGraph(@PathParam("databaseName") String databaseName) throws JSONException,
-    IOException {
+  public Response getGraph(@PathParam("databaseName") String databaseName) throws Exception {
 
+    String path = RequestHandler.class.getResource("/data/" + databaseName).getPath();
 
-    String graphPath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/graphs.json").getPath();
-    String vertexPath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/vertices.json").getPath();
-    String edgePath =
-      RequestHandler.class.getResource("/data/" + databaseName + "/edges.json").getPath();
+    CSVDataSource source = new CSVDataSource(path, config);
 
-    
-    BufferedReader reader = new BufferedReader(new FileReader(graphPath));
-    String line = reader.readLine();
-    JSONObject graph = new JSONObject(line);
-    reader.close();
+    LogicalGraph graph = source.getLogicalGraph();
 
-    reader = new BufferedReader(new FileReader(vertexPath));
-    JSONArray vertices = new JSONArray();
-    while ((line = reader.readLine()) != null) {
-      JSONObject vertex = new JSONObject(line);
-      vertices.put(vertex);
-    }
-    reader.close();
+    String json = CytoJSONBuilder.getJSON(
+      graph.getGraphHead().collect().get(0),
+      graph.getVertices().collect(),
+      graph.getEdges().collect());
 
-    reader = new BufferedReader(new FileReader(edgePath));
-    JSONArray edges = new JSONArray();
-    while ((line = reader.readLine()) != null) {
-      JSONObject edge = new JSONObject(line);
-      edges.put(edge);
-    }
-    reader.close();
-
-    CytoJSONBuilder cytoBuilder = new CytoJSONBuilder();
-
-    String json = cytoBuilder.getJSON(graph, vertices, edges);
     return Response.ok(json).build();
   }
 
@@ -376,27 +341,16 @@ public class RequestHandler {
   public Response getData(GroupingRequest request) throws Exception {
 
     //load the database
-    String dbName = request.getDbName();
+    String databaseName = request.getDbName();
 
-    String graphPath =
-      RequestHandler.class.getResource("/data/" + dbName + "/graphs.json").getPath();
-    String vertexPath =
-      RequestHandler.class.getResource("/data/" + dbName + "/vertices.json").getPath();
-    String edgePath =
-      RequestHandler.class.getResource("/data/" + dbName + "/edges.json").getPath();
+    String path = RequestHandler.class.getResource("/data/" + databaseName).getPath();
 
-    JSONDataSource source = new JSONDataSource(graphPath, vertexPath, edgePath, config);
+    CSVDataSource source = new CSVDataSource(path, config);
 
-    GraphCollection collection = source.getGraphCollection();
+    LogicalGraph graph = source.getLogicalGraph();
 
-    //ToDo das geht besser
-    GradoopId graphId = collection.getGraphHeads().collect().get(0).getId();
-
-    LogicalGraph graph = source.getGraphCollection().getGraph(graphId);
-
-    graph = graph.subgraph(
-      new LabelFilter<Vertex>(request.getVertexFilters()),
-      new LabelFilter<Edge>(request.getEdgeFilters()));
+    graph = graph.subgraph(new LabelFilter<>(request.getVertexFilters()),
+      new LabelFilter<>(request.getEdgeFilters()));
 
     //construct the grouping with the parameters send by the request
     Grouping.GroupingBuilder builder = new Grouping.GroupingBuilder();
@@ -479,9 +433,8 @@ public class RequestHandler {
       ENV.execute();
 
       // build the response JSON from the collections
-      CytoJSONBuilder cytoBuilder = new CytoJSONBuilder();
 
-      String json = cytoBuilder.getJSON(resultHead.get(0), resultVertices, resultEdges);
+      String json = CytoJSONBuilder.getJSON(resultHead.get(0), resultVertices, resultEdges);
 
       return Response.ok(json).build();
 
