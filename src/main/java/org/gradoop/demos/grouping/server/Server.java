@@ -38,17 +38,26 @@ public class Server {
    * URI that specifies where the server is run.
    */
   private static final URI BASE_URI = getBaseURI();
+  /**
+   * Default port
+   */
+  private static final int PORT = 2342;
+  /**
+   * Path to demo application
+   */
+  private static final String APPLICATION_PATH = "gradoop/grouping/demo.html";
 
   /**
    * Creates the base URI.
    * @return Base URI
    */
   private static URI getBaseURI() {
-    return UriBuilder.fromUri("http://localhost/").port(2342).build();
+    return UriBuilder.fromUri("http://localhost/").port(PORT).build();
   }
 
   /**
    * Starts the server and adds the request handlers.
+   *
    * @return the running server
    * @throws IOException if server creation fails
    */
@@ -65,14 +74,15 @@ public class Server {
   }
 
   /**
-   * Main method. Run this to start the server at localhost:9998.
+   * Main method. Run this to start the server.
+   *
    * @param args command line parameters
    * @throws IOException if server creation fails
    */
   public static void main(String[] args) throws IOException {
     HttpServer httpServer = startServer();
-    System.out.println("org.gradoop.demos.grouping.server started at localhost:9998/\n" +
-      "Press any key to stop it.\n");
+    System.out.printf("org.gradoop.demos.grouping.server started at %s%s%n" +
+      "Press any key to stop it.%n", getBaseURI(), APPLICATION_PATH);
     System.in.read();
     httpServer.stop();
   }
