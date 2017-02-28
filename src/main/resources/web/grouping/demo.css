@@ -193,6 +193,20 @@ a {
     height: 20px;
 }
 
+.label {
+    font-size: 12px;
+    text-align: left;
+    float: left;
+    font-weight: bold;
+}
+
+.filterLabel {
+    font-size: 12px;
+    text-align: left;
+    float: left;
+    font-weight: bold;
+}
+
 .MyQtip {
 
     /** Taken from Bootstrap body */

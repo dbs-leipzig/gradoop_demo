@@ -40,6 +40,13 @@ var edgeLabelKey;
  */
 var colorMap = {};
 
+var bufferedData;
+
+/**
+ * Boolean specifying if the graph was changed, used to dodge unnecessary redraws.
+ */
+var changed;
+
 $(document).ready(function () {
 
     // hide everything that is invisible at the beginning
@@ -69,6 +76,7 @@ $(document).ready(function () {
         $.post("http://localhost:2342/graph/" + databaseName)
             .done(function (data) {
                 showGraph(data, true, false);
+                changed = true;
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -118,6 +126,8 @@ $(document).ready(function () {
  * @param {Boolean} useDefaultLabel boolean value, true if default label shall be used
  */
 function showGraph(data, useDefaultLabel, useForceLayout) {
+
+    bufferedData = data;
 
     // lists of nodes and edges
     var nodes = data.nodes;
@@ -375,6 +385,7 @@ function showGraph(data, useDefaultLabel, useForceLayout) {
         });
 
     });
+    changed = false;
 }
 
 /**
@@ -418,6 +429,7 @@ function initializeDatabaseMenu(databases) {
  * this database. If the request succeeds, initialize the other interface menus.
  */
 function sendKeyRequest() {
+    changed = true;
     var databaseName = getSelectedDatabase();
     if (databaseName != "Select a database") {
         $.post("http://localhost:2342/keys/" + databaseName)
@@ -436,10 +448,19 @@ function sendKeyRequest() {
 function initializeOtherMenus(keys) {
     $("#exec").show();
     $("#wholeGraph").show();
-    $(".show").show();
+    $(".show").show().on("click", redrawIfNotChanged);
+
+    $(".label").show();
+
     initializeFilterKeyMenus(keys);
     initializePropertyKeyMenus(keys);
     initializeAggregateFunctionMenus(keys);
+}
+
+function redrawIfNotChanged() {
+    if(!changed) {
+        showGraph(bufferedData, false, true);
+    }
 }
 
 /**
@@ -450,6 +471,10 @@ function initializeFilterKeyMenus(keys) {
 
     var vertexFilters = $("#vertexFilters");
     var edgeFilters = $("#edgeFilters");
+
+    // show the instructions
+    vertexFilters.find(".instruction").show();
+    edgeFilters.find(".instruction").show();
 
     // clear previous entries
     vertexFilters.find(".multiSel").children().remove();
@@ -464,14 +489,8 @@ function initializeFilterKeyMenus(keys) {
 
         vertexFilterSelect.append(
             '<li><input type="checkbox" value="' + vertexLabel + '"' +
-            ' class="checkbox" checked=true/>' + vertexLabel + '</li>');
-
-        vertexFilters.find('.multiSel').append(
-            '<span title="' + vertexLabel + '">' + vertexLabel + '</span>');
+            ' class="checkbox"/>' + vertexLabel + '</li>');
     }
-
-    // hide the instructions
-    vertexFilters.find('.instruction').hide();
 
     // add one entry per vertex label
     for (var j = 0; j < keys.edgeLabels.length; j++) {
@@ -479,14 +498,9 @@ function initializeFilterKeyMenus(keys) {
 
         edgeFilterSelect.append(
             '<li><input type="checkbox" value="' + edgeLabel + '"' +
-            ' class="checkbox" checked=true/>' + edgeLabel + '</li>');
-
-        edgeFilters.find('.multiSel').append(
-            '<span title="' + edgeLabel + '">' + edgeLabel + '</span>');
+            ' class="checkbox"/>' + edgeLabel + '</li>');
     }
 
-    // hide the instructions
-    edgeFilters.find(".instruction").hide();
 
     // on click, toggle filter menu
     $("#showFilters").on("click", toggleFilterMenu);
@@ -504,10 +518,13 @@ function initializeFilterKeyMenus(keys) {
 function toggleFilterMenu() {
     var vertexFilters = $("#vertexFilters");
     var edgeFilters = $("#edgeFilters");
+    var filterLabels = $(".filterLabel")
     if (this.checked) {
+        filterLabels.show();
         vertexFilters.show();
         edgeFilters.show();
     } else {
+        filterLabels.hide();
         vertexFilters.hide();
         edgeFilters.hide();
     }
@@ -645,6 +662,7 @@ function createEdgeFilterMapEntry(edgeKey) {
  */
 
 function elementSelected() {
+    changed = true;
     var title = $(this).val();
     var propertyKeys = $(this).closest('.dropDown');
 
@@ -913,6 +931,8 @@ function initializeAggregateFunctionMenus(keys) {
  */
 function hideElements() {
     $('#loading').hide();
+    $('.label').hide();
+    $('.filterLabel').hide();
     $('.show').hide();
     $('.dropDown').hide();
     $('.aggrFuncs').hide();
@@ -1014,7 +1034,7 @@ function getSelectedEdgeFilters() {
  */
 function isValidRequest(request) {
     return ((request.dbName != "Select a database") &&
-        (request.vertexKeys.length > 0));
+    (request.vertexKeys.length > 0));
 }
 
 /**
@@ -1134,7 +1154,7 @@ function chooseLayout(useForceLayout) {
         name: "random",
         fit: false, // whether to fit to viewport
         padding: 30, // fit padding
-        boundingBox: {x1:0, y1:0, w:5000, h:5000}, // constrain layout bounds; { x1, y1, x2, y2 }
+        boundingBox: {x1: 0, y1: 0, w: 5000, h: 5000}, // constrain layout bounds; { x1, y1, x2, y2 }
         // or { x1, y1, w, h }
         animate: false, // whether to transition the node positions
         animationDuration: 0, // duration of animation in ms if enabled
@@ -1143,9 +1163,31 @@ function chooseLayout(useForceLayout) {
         stop: undefined // callback on layoutstop
     };
 
-    if(useForceLayout) {
+    var radialRandom = {
+        name: 'preset',
+        positions: function(node) {
+
+            var r = Math.random() * 1000001;
+            var theta = Math.random() * 2 * (Math.PI);
+            return {
+                x: Math.sqrt(r)*Math.sin(theta),
+                y: Math.sqrt(r)*Math.cos(theta)
+            };
+        },
+        zoom: undefined,
+        pan: undefined,
+        fit: true,
+        padding: 30,
+        animate: false,
+        animationDuration: 500,
+        animationEasing: undefined,
+        ready: undefined,
+        stop: undefined
+    };
+
+    if (useForceLayout) {
         return cose;
     } else {
-        return random;
+        return radialRandom;
     }
 }

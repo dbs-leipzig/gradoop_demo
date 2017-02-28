@@ -17,6 +17,7 @@
 
 <html>
 <head>
+    <title>Gradoop 0.3 Demo</title>
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" type="text/css" href="qtip/jquery.qtip.css">
@@ -67,6 +68,15 @@
         </label>
     </p>
 
+    <p>
+        <label class="show">
+            <input type="checkbox" id="showNullNodes" >
+            Show NULL value nodes
+        </label>
+    </p>
+
+
+    <label class="filterLabel">Vertex Filters</label>
     <dl class="dropDown" id="vertexFilters">
         <dt>
             <a href="#">
@@ -83,6 +93,7 @@
         </dd>
     </dl>
 
+    <label class="filterLabel">Edge Filters</label>
     <dl class="dropDown" id="edgeFilters">
         <dt>
             <a href="#">
@@ -99,6 +110,7 @@
         </dd>
     </dl>
 
+    <label class="label">Vertex Property Keys</label>
     <dl class="dropDown" id="vertexPropertyKeys">
         <dt>
             <a href="#">
@@ -115,6 +127,7 @@
         </dd>
     </dl>
 
+    <label class="label">Edge Property Keys</label>
     <dl class="dropDown" id="edgePropertyKeys">
         <dt>
             <a href="#">
@@ -131,6 +144,7 @@
         </dd>
     </dl>
 
+    <label class="label">Vertex Aggregation Functions</label>
     <dl class="dropDown" id="vertexAggrFuncs">
         <dt>
             <a href="#">
@@ -147,6 +161,7 @@
         </dd>
     </dl>
 
+    <label class="label">Edge Aggregation Functions</label>
     <dl class="dropDown" id="edgeAggrFuncs">
         <dt>
             <a href="#">
