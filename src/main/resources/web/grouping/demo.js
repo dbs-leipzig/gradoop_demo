@@ -18,7 +18,7 @@
 /**
  * Prefixes of the aggregation functions
  */
-var aggrPrefixes = ["min ", "max ", "sum "];
+var aggrPrefixes = ['min ', 'max ', 'sum '];
 
 /**
  * Maps of (label) to (property key, number of supporting labels)
@@ -44,18 +44,46 @@ var bufferedData;
 
 /**
  * Boolean specifying if the graph was changed, used to dodge unnecessary redraws.
+ * @type {boolean}
  */
 var changed;
 
+/**
+ * The cytoscape graph object
+ */
 var cy;
 
+/**
+ * True, if the graph layout should be force based
+ * @type {boolean}
+ */
 var useForceLayout = true;
+
+/**
+ * True, if the default label should be used
+ * @type {boolean}
+ */
 var useDefaultLabel = true;
+
+/**
+ * Maximum value for the count attribute of vertices
+ * @type {number}
+ */
 var maxVertexCount = 0;
+
+/**
+ * Maximum value for the count attribute of edges
+ * @type {number}
+ */
 var maxEdgeCount = 0;
 
+
+/**
+ * Runs when the DOM is ready
+ */
 $(document).ready(function () {
 
+    //Build a first instance of the cytoscape graph object
     cy = buildCytoscape();
 
     // hide everything that is invisible at the beginning
@@ -67,22 +95,22 @@ $(document).ready(function () {
 
     // get the available databases from the org.gradoop.demos.grouping.server
     // if the request is a success, add them to the database propertyKeys menu
-    $.get("http://localhost:2342/databases/")
+    $.get('http://localhost:2342/databases/')
         .done(initializeDatabaseMenu)
         .fail(function (jqXHR, textStatus, errorThrown) {
             alert(errorThrown);
         });
 
 
-    // when the "Show whole graph" button is clicked, send a request to the server for the whole
+    // when the 'Show whole graph' button is clicked, send a request to the server for the whole
     // graph
-    $("#wholeGraph").bind("click", function () {
+    $('#wholeGraph').bind('click', function () {
 
         // show the loading spinner
-        $("#loading").show();
+        $('#loading').show();
 
         var databaseName = getSelectedDatabase();
-        $.post("http://localhost:2342/graph/" + databaseName)
+        $.post('http://localhost:2342/graph/' + databaseName)
             .done(function (data) {
                 useDefaultLabel = true;
                 useForceLayout = false;
@@ -96,8 +124,8 @@ $(document).ready(function () {
     });
 
 
-    // when the "Execute" button is clicked, construct a request and send it to the server
-    $("#exec").bind("click", function () {
+    // when the 'Execute' button is clicked, construct a request and send it to the server
+    $('#exec').bind('click', function () {
 
         var request = {};
 
@@ -113,13 +141,13 @@ $(document).ready(function () {
         if (isValidRequest(request)) {
 
             // show the loading gif
-            $("#loading").show();
+            $('#loading').show();
 
             $.ajax({
-                url: "http://localhost:2342/data/",
-                datatype: "text",
-                type: "post",
-                contentType: "application/json",
+                url: 'http://localhost:2342/data/',
+                datatype: 'text',
+                type: 'post',
+                contentType: 'application/json',
                 data: JSON.stringify(request),
                 success: function (data) {
                     useDefaultLabel = false;
@@ -128,7 +156,7 @@ $(document).ready(function () {
                 }
             });
         } else {
-            alert("Not a valid request.");
+            alert('Not a valid request.');
         }
     });
 });
@@ -139,6 +167,7 @@ $(document).ready(function () {
  */
 function drawGraph(data) {
 
+    // buffer the data to speed up redrawing
     bufferedData = data;
 
     // lists of nodes and edges
@@ -152,14 +181,14 @@ function drawGraph(data) {
     maxVertexCount = 0;
     for (var i = 0; i < nodes.length; i++) {
         var vertex = nodes[i];
-        var vertexCount = Number(vertex["data"]["properties"]["count"]);
+        var vertexCount = Number(vertex['data']['properties']['count']);
         if ((vertexCount != null) && (vertexCount > maxVertexCount)) {
             maxVertexCount = vertexCount;
         }
-        if (!useDefaultLabel && vertexLabelKey != "label") {
-            labels.add(vertex["data"]["properties"][vertexLabelKey]);
+        if (!useDefaultLabel && vertexLabelKey != 'label') {
+            labels.add(vertex['data']['properties'][vertexLabelKey]);
         } else {
-            labels.add(vertex["data"]["label"]);
+            labels.add(vertex['data']['label']);
         }
     }
 
@@ -170,31 +199,35 @@ function drawGraph(data) {
     maxEdgeCount = 0;
     for (var j = 0; j < edges.length; j++) {
         var edge = edges[j];
-        var edgeCount = Number(edge["data"]["properties"]["count"]);
+        var edgeCount = Number(edge['data']['properties']['count']);
         if ((edgeCount != null) && (edgeCount > maxEdgeCount)) {
             maxEdgeCount = edgeCount;
         }
     }
 
     // hide the loading gif
-    $("#loading").hide();
+    $('#loading').hide();
 
 
     // update vertex and edge count
-    var rows = "";
-    rows += "<tr><td>Vertex Count</td><td>:</td><td>"
-        + nodes.length + "</td></tr>";
-    rows += "<tr><td>Edge Count</td><td>:</td><td>"
-        + edges.length + "</td></tr>";
-    $("#stats").html(rows);
+    var rows = '';
+    rows += '<tr><td>Vertex Count</td><td>:</td><td>'
+        + nodes.length + '</td></tr>';
+    rows += '<tr><td>Edge Count</td><td>:</td><td>'
+        + edges.length + '</td></tr>';
+    $('#stats').html(rows);
 
 
     cy.elements().remove();
     cy.add(nodes);
     cy.add(edges);
 
-    if ($("#hideNullGroups").is(":checked")) {
+    if ($('#hideNullGroups').is(':checked')) {
         hideNullGroups();
+    }
+
+    if ($('#hideDisconnected').is(':checked')) {
+        hideDisconnected();
     }
 
     addQtip();
@@ -209,34 +242,34 @@ function drawGraph(data) {
  * @param databases list of all available databases
  */
 function initializeDatabaseMenu(databases) {
-    var databaseSelect = $("#databases");
+    var databaseSelect = $('#databases');
     databaseSelect.show();
     for (var i = 0; i < databases.length; i++) {
         var name = databases[i];
         databaseSelect.append('<option value="' + name + '">' + name + '</option>');
     }
-    databaseSelect.find("option").on("click", sendKeyRequest);
+    databaseSelect.find('option').on('click', sendKeyRequest);
 
     // on click, the dropdown menus open, this has to be done here so it is done only once
-    $(".dropDown").find("dt a").on("click", function () {
-        $(this).closest(".dropDown").find("ul").slideToggle("fast");
+    $('.dropDown').find('dt a').on('click', function () {
+        $(this).closest('.dropDown').find('ul').slideToggle('fast');
     });
 
     // hide dropdown menus when something else is clicked
-    $(document).bind("click", function (e) {
+    $(document).bind('click', function (e) {
         var $clicked = $(e.target);
-        if (!$clicked.parents("#vertexPropertyKeys").length)
-            $("#vertexPropertyKeys").find("dd ul").hide();
-        if (!$clicked.parents("#edgePropertyKeys").length)
-            $("#edgePropertyKeys").find("dd ul").hide();
-        if (!$clicked.parents("#vertexFilters").length)
-            $("#vertexFilters").find("dd ul").hide();
-        if (!$clicked.parents("#edgeFilters").length)
-            $("#edgeFilters").find("dd ul").hide();
-        if (!$clicked.parents("#vertexAggrFuncs").length)
-            $("#vertexAggrFuncs").find("dd ul").hide();
-        if (!$clicked.parents("#edgeAggrFuncs").length)
-            $("#edgeAggrFuncs").find("dd ul").hide();
+        if (!$clicked.parents('#vertexPropertyKeys').length)
+            $('#vertexPropertyKeys').find('dd ul').hide();
+        if (!$clicked.parents('#edgePropertyKeys').length)
+            $('#edgePropertyKeys').find('dd ul').hide();
+        if (!$clicked.parents('#vertexFilters').length)
+            $('#vertexFilters').find('dd ul').hide();
+        if (!$clicked.parents('#edgeFilters').length)
+            $('#edgeFilters').find('dd ul').hide();
+        if (!$clicked.parents('#vertexAggrFuncs').length)
+            $('#vertexAggrFuncs').find('dd ul').hide();
+        if (!$clicked.parents('#edgeAggrFuncs').length)
+            $('#edgeAggrFuncs').find('dd ul').hide();
     });
 }
 
@@ -247,8 +280,8 @@ function initializeDatabaseMenu(databases) {
 function sendKeyRequest() {
     changed = true;
     var databaseName = getSelectedDatabase();
-    if (databaseName != "Select a database") {
-        $.post("http://localhost:2342/keys/" + databaseName)
+    if (databaseName != 'Select a database') {
+        $.post('http://localhost:2342/keys/' + databaseName)
             .done(initializeOtherMenus)
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -258,15 +291,16 @@ function sendKeyRequest() {
 
 
 /**
- * Initialize the property key menus, the filter menus and the aggregate function selects.
- * @param keys
+ * Initialize the property key menus, the filter menus, the aggregate function selects and the
+ * checkboxes.
+ * @param keys vertex and edge property keys
  */
 function initializeOtherMenus(keys) {
-    $("#exec").show();
-    $("#wholeGraph").show();
-    $(".show").show().on("click", redrawIfNotChanged);
+    $('#exec').show();
+    $('#wholeGraph').show();
+    $('.show').show().on('click', redrawIfNotChanged);
 
-    $(".label").show();
+    $('.label').show();
 
     initializeFilterKeyMenus(keys);
     initializePropertyKeyMenus(keys);
@@ -287,19 +321,19 @@ function redrawIfNotChanged() {
  */
 function initializeFilterKeyMenus(keys) {
 
-    var vertexFilters = $("#vertexFilters");
-    var edgeFilters = $("#edgeFilters");
+    var vertexFilters = $('#vertexFilters');
+    var edgeFilters = $('#edgeFilters');
 
     // show the instructions
-    vertexFilters.find(".instruction").show();
-    edgeFilters.find(".instruction").show();
+    vertexFilters.find('.instruction').show();
+    edgeFilters.find('.instruction').show();
 
     // clear previous entries
-    vertexFilters.find(".multiSel").children().remove();
-    edgeFilters.find(".multiSel").children().remove();
+    vertexFilters.find('.multiSel').children().remove();
+    edgeFilters.find('.multiSel').children().remove();
 
-    var vertexFilterSelect = vertexFilters.find("dd .multiSelect ul").empty();
-    var edgeFilterSelect = edgeFilters.find("dd .multiSelect ul").empty();
+    var vertexFilterSelect = vertexFilters.find('dd .multiSelect ul').empty();
+    var edgeFilterSelect = edgeFilters.find('dd .multiSelect ul').empty();
 
     // add one entry per vertex label
     for (var i = 0; i < keys.vertexLabels.length; i++) {
@@ -321,22 +355,22 @@ function initializeFilterKeyMenus(keys) {
 
 
     // on click, toggle filter menu
-    $("#showFilters").on("click", toggleFilterMenu);
+    $('#showFilters').on('click', toggleFilterMenu);
 
     // on click, select filters
-    vertexFilters.find(".checkbox").on("click", elementSelected);
-    vertexFilters.find(".checkbox").on("click", vertexFilterSelected);
-    edgeFilters.find(".checkbox").on("click", elementSelected);
-    edgeFilters.find(".checkbox").on("click", edgeFilterSelected);
+    vertexFilters.find('.checkbox').on('click', elementSelected);
+    vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
+    edgeFilters.find('.checkbox').on('click', elementSelected);
+    edgeFilters.find('.checkbox').on('click', edgeFilterSelected);
 }
 
 /**
  * Show or hide the filter menu
  */
 function toggleFilterMenu() {
-    var vertexFilters = $("#vertexFilters");
-    var edgeFilters = $("#edgeFilters");
-    var filterLabels = $(".filterLabel")
+    var vertexFilters = $('#vertexFilters');
+    var edgeFilters = $('#edgeFilters');
+    var filterLabels = $('.filterLabel')
     if (this.checked) {
         filterLabels.show();
         vertexFilters.show();
@@ -355,41 +389,45 @@ function toggleFilterMenu() {
 function initializePropertyKeyMenus(keys) {
 
     // get the propertyKeys menus in their current form
-    var vertexPropertyKeys = $("#vertexPropertyKeys");
-    var edgePropertyKeys = $("#edgePropertyKeys");
+    var vertexPropertyKeys = $('#vertexPropertyKeys');
+    var edgePropertyKeys = $('#edgePropertyKeys');
 
     // remove the current keys from the property key menus
-    var vertexSelect = vertexPropertyKeys.find("dd .multiSelect ul").empty();
-    var edgeSelect = edgePropertyKeys.find("dd .multiSelect ul").empty();
+    var vertexSelect = vertexPropertyKeys.find('dd .multiSelect ul').empty();
+    var edgeSelect = edgePropertyKeys.find('dd .multiSelect ul').empty();
 
-    var vertexLabelHtml = "" +
+    // add the label option, which is always possible
+    var vertexLabelHtml = '' +
         '<li><input type ="checkbox" value ="label" class="checkbox"/> label</li>';
 
     vertexSelect.append(vertexLabelHtml);
 
+    // add the other options
     for (var i1 = 0; i1 < keys.vertexKeys.length; i1++) {
         var vertexKey = keys.vertexKeys[i1];
-        var vertexPropertyLabel = "&lt;";
+        var vertexPropertyLabel = '&lt;';
         // insert an entry into the vertex filter map
         createVertexFilterMapEntry(vertexKey);
         for (var j1 = 0; j1 < vertexKey.labels.length; j1++) {
             vertexPropertyLabel += vertexKey.labels[j1];
             if (j1 < vertexKey.labels.length - 1) {
-                vertexPropertyLabel += ", ";
+                vertexPropertyLabel += ', ';
             }
         }
-        vertexPropertyLabel += "&gt;." + vertexKey.name;
+        vertexPropertyLabel += '&gt;.' + vertexKey.name;
         var vertexHtml =
             '<li><input type="checkbox" value="' + vertexKey.name + '" ' +
             ' class="checkbox"/>' + vertexPropertyLabel + '</li>';
         vertexSelect.append(vertexHtml);
     }
 
+    // add the label option, which is always possible
     var edgeLabelHtml = '' +
         '<li><input type ="checkbox" value ="label" class="checkbox"/> label</li>';
 
     edgeSelect.append(edgeLabelHtml);
 
+    // add the other options
     for (var i = 0; i < keys.edgeKeys.length; i++) {
         var edgeKey = keys.edgeKeys[i];
         var edgePropertyLabel = '&lt;';
@@ -398,7 +436,7 @@ function initializePropertyKeyMenus(keys) {
         for (var j = 0; j < edgeKey.labels.length; j++) {
             edgePropertyLabel += edgeKey.labels[j];
             if (j < edgeKey.labels.length - 1) {
-                edgePropertyLabel += ", ";
+                edgePropertyLabel += ', ';
             }
         }
         edgePropertyLabel += '&gt;.' + edgeKey.name;
@@ -420,6 +458,7 @@ function initializePropertyKeyMenus(keys) {
     vertexPropertyKeys.find('.instruction').show();
     edgePropertyKeys.find('.instruction').show();
 
+    // add click listener
     vertexPropertyKeys.find('.checkbox').on('click', elementSelected);
     vertexPropertyKeys.find('.checkbox').on('click', setVertexLabel);
     edgePropertyKeys.find('.checkbox').on('click', elementSelected);
@@ -504,9 +543,9 @@ function elementSelected() {
 function setVertexLabel() {
     var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
     selectedLabels.each(function () {
-        $(this).css("font-weight", "normal");
+        $(this).css('font-weight', 'normal');
     });
-    selectedLabels.first().css("font-weight", "bold");
+    selectedLabels.first().css('font-weight', 'bold');
     vertexLabelKey = selectedLabels.first().text();
 }
 
@@ -517,9 +556,9 @@ function setVertexLabel() {
 function setEdgeLabel() {
     var selectedLabels = $(this).closest('.dropDown').find('.multiSel span');
     selectedLabels.each(function () {
-        $(this).css("font-weight", "normal");
+        $(this).css('font-weight', 'normal');
     });
-    selectedLabels.first().css("font-weight", "bold");
+    selectedLabels.first().css('font-weight', 'bold');
     edgeLabelKey = selectedLabels.first().text();
 }
 
@@ -684,12 +723,12 @@ function disableAggrFunc(dropdown, keyObject) {
  * initialize the aggregate function propertyKeys menu
  */
 function initializeAggregateFunctionMenus(keys) {
-    var vertexAggrFuncs = $("#vertexAggrFuncs");
-    var edgeAggrFuncs = $("#edgeAggrFuncs");
+    var vertexAggrFuncs = $('#vertexAggrFuncs');
+    var edgeAggrFuncs = $('#edgeAggrFuncs');
 
     // remove the current keys from the property key menus
-    var vertexSelect = vertexAggrFuncs.find("dd .multiSelect ul").empty();
-    var edgeSelect = edgeAggrFuncs.find("dd .multiSelect ul").empty();
+    var vertexSelect = vertexAggrFuncs.find('dd .multiSelect ul').empty();
+    var edgeSelect = edgeAggrFuncs.find('dd .multiSelect ul').empty();
 
     // add count as default aggregation function
     var vertexLabelHtml = '' +
@@ -761,7 +800,7 @@ function hideElements() {
  * @returns selected database name
  */
 function getSelectedDatabase() {
-    return $("#databases").find("option:selected").text();
+    return $('#databases').find('option:selected').text();
 }
 
 /**
@@ -770,7 +809,7 @@ function getSelectedDatabase() {
  */
 function getSelectedVertexKeys() {
     return $.map(
-        $("#vertexPropertyKeys").find("dt a .multiSel span"),
+        $('#vertexPropertyKeys').find('dt a .multiSel span'),
         function (item) {
             return $(item).text();
         });
@@ -782,7 +821,7 @@ function getSelectedVertexKeys() {
  */
 function getSelectedEdgeKeys() {
     return $.map(
-        $("#edgePropertyKeys").find("dt a .multiSel span"),
+        $('#edgePropertyKeys').find('dt a .multiSel span'),
         function (item) {
             return $(item).text();
         });
@@ -794,7 +833,7 @@ function getSelectedEdgeKeys() {
  */
 function getSelectedVertexAggregateFunctions() {
     return $.map(
-        $("#vertexAggrFuncs").find("dt a .multiSel span"),
+        $('#vertexAggrFuncs').find('dt a .multiSel span'),
         function (item) {
             return $(item).text();
         });
@@ -806,7 +845,7 @@ function getSelectedVertexAggregateFunctions() {
  */
 function getSelectedEdgeAggregateFunctions() {
     return $.map(
-        $("#edgeAggrFuncs").find("dt a .multiSel span"),
+        $('#edgeAggrFuncs').find('dt a .multiSel span'),
         function (item) {
             return $(item).text();
         });
@@ -819,7 +858,7 @@ function getSelectedEdgeAggregateFunctions() {
 function getSelectedVertexFilters() {
     if ($('#showFilters').is(':checked')) {
         return $.map(
-            $("#vertexFilters").find("dt a .multiSel span"),
+            $('#vertexFilters').find('dt a .multiSel span'),
             function (item) {
                 return $(item).text();
             });
@@ -835,7 +874,7 @@ function getSelectedVertexFilters() {
 function getSelectedEdgeFilters() {
     if ($('#showFilters').is(':checked')) {
         return $.map(
-            $("#edgeFilters").find("dt a .multiSel span"),
+            $('#edgeFilters').find('dt a .multiSel span'),
             function (item) {
                 return $(item).text();
             });
@@ -851,7 +890,7 @@ function getSelectedEdgeFilters() {
  * @returns {boolean} true, if the request was valid
  */
 function isValidRequest(request) {
-    return ((request.dbName != "Select a database") &&
+    return ((request.dbName != 'Select a database') &&
     (request.vertexKeys.length > 0));
 }
 
@@ -859,11 +898,12 @@ function isValidRequest(request) {
  * Reset the page on reload
  */
 function resetPage() {
-    $("#showFilters").prop("checked", false);
-    $("#showEdgeLabels").prop("checked", false);
-    $("#showCountAsSize").prop("checked", false);
-    $("#hideNullGroups").prop("checked", false);
-    $("#databases").val("default");
+    $('#showFilters').prop('checked', false);
+    $('#showEdgeLabels').prop('checked', false);
+    $('#showCountAsSize').prop('checked', false);
+    $('#hideNullGroups').prop('checked', false);
+    $('#hideDisconnected').prop('checked', false);
+    $('#databases').val('default');
 }
 
 /**
@@ -894,11 +934,11 @@ function generateRandomColors(labels) {
  * @returns {string} the label of the element
  */
 function getLabel(element, key, useDefaultLabel) {
-    var label = "";
-    if (!useDefaultLabel && key != "label") {
-        label += element.data("properties")[key];
+    var label = '';
+    if (!useDefaultLabel && key != 'label') {
+        label += element.data('properties')[key];
     } else {
-        label += element.data("label");
+        label += element.data('label');
     }
     return label;
 }
@@ -906,7 +946,7 @@ function getLabel(element, key, useDefaultLabel) {
 function chooseLayout() {
 // options for the force layout
     var cose = {
-        name: "cose",
+        name: 'cose',
 
         // called on `layoutready`
         ready: function () {
@@ -970,7 +1010,7 @@ function chooseLayout() {
     };
 
     var random = {
-        name: "random",
+        name: 'random',
         fit: false, // whether to fit to viewport
         padding: 30, // fit padding
         boundingBox: {x1: 0, y1: 0, w: 5000, h: 5000}, // constrain layout bounds; { x1, y1, x2, y2 }
@@ -1013,27 +1053,27 @@ function chooseLayout() {
 
 function buildCytoscape() {
     return cytoscape({
-        container: document.getElementById("canvas"),
+        container: document.getElementById('canvas'),
         style: cytoscape.stylesheet()
-            .selector("node")
+            .selector('node')
             .css({
 
                 // define label content and font
-                "content": function (node) {
+                'content': function (node) {
 
                     var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
 
-                    var properties = node.data("properties");
+                    var properties = node.data('properties');
 
-                    if (properties["count"] != null) {
-                        labelString += " (" + properties["count"] + ")";
+                    if (properties['count'] != null) {
+                        labelString += ' (' + properties['count'] + ')';
                     }
                     return labelString;
                 },
                 // if the count shall effect the vertex size, set font size accordingly
-                "font-size": function (node) {
-                    if ($("#showCountAsSize").is(":checked")) {
-                        var count = node.data("properties")["count"];
+                'font-size': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
                         if (count != null) {
                             count = count / maxVertexCount;
                             // surface of nodes is proportional to count
@@ -1042,80 +1082,80 @@ function buildCytoscape() {
                     }
                     return 10;
                 },
-                "text-valign": "center",
-                "color": "black",
+                'text-valign': 'center',
+                'color': 'black',
                 // this function changes the text color according to the background color
                 // unnecessary atm because only light colors can be generated
                 /* function (node) {
                  var label = getLabel(node, vertexLabelKey, useDefaultLabel);
                  var bgColor = colorMap[label];
                  if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
-                 return "white";
+                 return 'white';
                  }
-                 return "black";
+                 return 'black';
                  },*/
                 // set background color according to color map
-                "background-color": function (node) {
+                'background-color': function (node) {
                     var label = getLabel(node, vertexLabelKey, useDefaultLabel);
                     var color = colorMap[label];
-                    var result = "#";
-                    result += ("0" + color[0].toString(16)).substr(-2);
-                    result += ("0" + color[1].toString(16)).substr(-2);
-                    result += ("0" + color[2].toString(16)).substr(-2);
+                    var result = '#';
+                    result += ('0' + color[0].toString(16)).substr(-2);
+                    result += ('0' + color[1].toString(16)).substr(-2);
+                    result += ('0' + color[2].toString(16)).substr(-2);
                     return result;
                 },
 
                 // size of nodes can be determined by property count
                 // count specifies that the node stands for
                 // 1 or more other nodes
-                "width": function (node) {
-                    if ($("#showCountAsSize").is(":checked")) {
-                        var count = node.data("properties")["count"];
+                'width': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
                         if (count != null) {
                             count = count / maxVertexCount;
                             // surface of nodes is proportional to count
-                            return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
                         }
                     }
-                    return "60px";
+                    return '60px';
 
                 },
-                "height": function (node) {
-                    if ($("#showCountAsSize").is(":checked")) {
-                        var count = node.data("properties")["count"];
+                'height': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
                         if (count != null) {
                             count = count / maxVertexCount;
                             // surface of nodes is proportional to count
-                            return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
                         }
                     }
-                    return "60px";
+                    return '60px';
                 },
-                "text-wrap": "wrap"
+                'text-wrap': 'wrap'
             })
-            .selector("edge")
+            .selector('edge')
             .css({
                 // layout of edge and edge label
-                "content": function (edge) {
+                'content': function (edge) {
 
-                    if (!$("#showEdgeLabels").is(":checked")) {
-                        return "";
+                    if (!$('#showEdgeLabels').is(':checked')) {
+                        return '';
                     }
 
                     var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
 
-                    var properties = edge.data("properties");
+                    var properties = edge.data('properties');
 
-                    if (properties["count"] != null) {
-                        labelString += " (" + properties["count"] + ")";
+                    if (properties['count'] != null) {
+                        labelString += ' (' + properties['count'] + ')';
                     }
 
                     return labelString;
                 },
                 // if the count shall effect the vertex size, set font size accordingly
-                "font-size": function (node) {
-                    if ($("#showCountAsSize").is(":checked")) {
-                        var count = node.data("properties")["count"];
+                'font-size': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
                         if (count != null) {
                             count = count / maxVertexCount;
                             // surface of nodes is proportional to count
@@ -1124,12 +1164,12 @@ function buildCytoscape() {
                     }
                     return 10;
                 },
-                "line-color": "#999",
+                'line-color': '#999',
                 // width of edges can be determined by property count
                 // count specifies that the edge represents 1 or more other edges
-                "width": function (edge) {
-                    if ($("#showCountAsSize").is(":checked")) {
-                        var count = edge.data("properties")["count"];
+                'width': function (edge) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = edge.data('properties')['count'];
                         if (count != null) {
                             count = count / maxEdgeCount;
                             return Math.sqrt(count * 1000);
@@ -1137,38 +1177,38 @@ function buildCytoscape() {
                     }
                     return 2;
                 },
-                "target-arrow-shape": "triangle",
-                "target-arrow-color": "#000"
+                'target-arrow-shape': 'triangle',
+                'target-arrow-color': '#000'
             })
             // properties of edges and nodes in special states
             // e.g. invisible or faded
-            .selector(".faded")
+            .selector('.faded')
             .css({
-                "opacity": 0.25,
-                "text-opacity": 0
+                'opacity': 0.25,
+                'text-opacity': 0
             })
-            .selector(".invisible")
+            .selector('.invisible')
             .css({
-                "opacity": 0,
-                "text-opacity": 0
+                'opacity': 0,
+                'text-opacity': 0
             }),
         ready: function () {
             window.cy = this;
             cy.elements().unselectify();
             // if a node is selected, fade all edges and nodes
             // that are not in direct neighborhood of the node
-            cy.on("tap", "node", function (e) {
+            cy.on('tap', 'node', function (e) {
                 var node = e.cyTarget;
                 var neighborhood = node.neighborhood().add(node);
 
-                cy.elements().addClass("faded");
-                neighborhood.removeClass("faded");
+                cy.elements().addClass('faded');
+                neighborhood.removeClass('faded');
             });
             // remove fading by clicking somewhere else
-            cy.on("tap", function (e) {
+            cy.on('tap', function (e) {
 
                 if (e.cyTarget === cy) {
-                    cy.elements().removeClass("faded");
+                    cy.elements().removeClass('faded');
                 }
             });
             // add a property box whenever a node or edge is
@@ -1181,27 +1221,27 @@ function buildCytoscape() {
 function addQtip() {
     cy.elements().qtip({
         content: function () {
-            var qtipText = "";
+            var qtipText = '';
             for (var key in this.data()) {
-                if (key != "properties" && key != "pie_parameters") {
-                    qtipText += key + " : " + this.data(key) + "<br>";
+                if (key != 'properties' && key != 'pie_parameters') {
+                    qtipText += key + ' : ' + this.data(key) + '<br>';
 
                 }
             }
-            var properties = this.data("properties");
+            var properties = this.data('properties');
             for (var property in properties) {
                 if (properties.hasOwnProperty(property)) {
-                    qtipText += property + " : " + properties[property] + "<br>";
+                    qtipText += property + ' : ' + properties[property] + '<br>';
                 }
             }
             return qtipText;
         },
         position: {
-            my: "top center",
-            at: "bottom center"
+            my: 'top center',
+            at: 'bottom center'
         },
         style: {
-            classes: "MyQtip"
+            classes: 'MyQtip'
         }
     });
 }
@@ -1217,7 +1257,7 @@ function hideNullGroups() {
     for (var i = 0; i < vertices.length; i++) {
         var vertex = vertices[i];
         for (var j = 0; j < vertexKeys.length; j++) {
-            if (vertex.data().properties[vertexKeys[j]] == "NULL") {
+            if (vertex.data().properties[vertexKeys[j]] == 'NULL') {
                 vertex.remove();
                 break;
             }
@@ -1227,10 +1267,22 @@ function hideNullGroups() {
     for (var k = 0; k < edges.length; k++) {
         var edge = edges[k];
         for (var l = 0; l < edgeKeys.length; l++) {
-            if (edge.data().properties[edgeKeys[l]] == "NULL") {
+            if (edge.data().properties[edgeKeys[l]] == 'NULL') {
                 edge.remove();
                 break;
             }
+        }
+    }
+}
+
+function hideDisconnected() {
+    var vertices = cy.nodes();
+
+    for (var i = 0; i < vertices.length; i++) {
+
+        var vert = vertices[i];
+        if (cy.edges('[source="' + vert.id() + '"]').length == 0) {
+            vert.remove();
         }
     }
 
