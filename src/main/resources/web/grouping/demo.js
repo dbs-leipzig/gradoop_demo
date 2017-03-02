@@ -47,7 +47,16 @@ var bufferedData;
  */
 var changed;
 
+var cy;
+
+var useForceLayout = true;
+var useDefaultLabel = true;
+var maxVertexCount = 0;
+var maxEdgeCount = 0;
+
 $(document).ready(function () {
+
+    cy = buildCytoscape();
 
     // hide everything that is invisible at the beginning
     hideElements();
@@ -75,8 +84,10 @@ $(document).ready(function () {
         var databaseName = getSelectedDatabase();
         $.post("http://localhost:2342/graph/" + databaseName)
             .done(function (data) {
-                showGraph(data, true, false);
+                useDefaultLabel = true;
+                useForceLayout = false;
                 changed = true;
+                drawGraph(data);
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
                 alert(errorThrown);
@@ -111,7 +122,9 @@ $(document).ready(function () {
                 contentType: "application/json",
                 data: JSON.stringify(request),
                 success: function (data) {
-                    showGraph(data, false, true);
+                    useDefaultLabel = false;
+                    useForceLayout = true;
+                    drawGraph(data, false, true);
                 }
             });
         } else {
@@ -123,9 +136,8 @@ $(document).ready(function () {
 /**
  * function called when the server returns the data
  * @param data graph data
- * @param {Boolean} useDefaultLabel boolean value, true if default label shall be used
  */
-function showGraph(data, useDefaultLabel, useForceLayout) {
+function drawGraph(data) {
 
     bufferedData = data;
 
@@ -137,7 +149,7 @@ function showGraph(data, useDefaultLabel, useForceLayout) {
     var labels = new Set();
 
     // compute maximum count of all vertices, used for scaling the vertex sizes
-    var maxVertexCount = 0;
+    maxVertexCount = 0;
     for (var i = 0; i < nodes.length; i++) {
         var vertex = nodes[i];
         var vertexCount = Number(vertex["data"]["properties"]["count"]);
@@ -155,7 +167,7 @@ function showGraph(data, useDefaultLabel, useForceLayout) {
     generateRandomColors(labels);
 
     // compute maximum count of all edges, used for scaling the edge sizes
-    var maxEdgeCount = 0;
+    maxEdgeCount = 0;
     for (var j = 0; j < edges.length; j++) {
         var edge = edges[j];
         var edgeCount = Number(edge["data"]["properties"]["count"]);
@@ -176,215 +188,19 @@ function showGraph(data, useDefaultLabel, useForceLayout) {
         + edges.length + "</td></tr>";
     $("#stats").html(rows);
 
-    var layout = chooseLayout(useForceLayout);
 
-    // start cytoscape
-    $(function () {
-        cytoscape({
-            container: document.getElementById("canvas"),
-            style: cytoscape.stylesheet()
-                .selector("node")
-                .css({
+    cy.elements().remove();
+    cy.add(nodes);
+    cy.add(edges);
 
-                    // define label content and font
-                    "content": function (node) {
+    if ($("#hideNullGroups").is(":checked")) {
+        hideNullGroups();
+    }
 
-                        var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
+    addQtip();
 
-                        var properties = node.data("properties");
+    cy.layout(chooseLayout());
 
-                        if (properties["count"] != null) {
-                            labelString += " (" + properties["count"] + ")";
-                        }
-
-                        return labelString;
-                    },
-                    // if the count shall effect the vertex size, set font size accordingly
-                    "font-size": function (node) {
-                        if ($("#showCountAsSize").is(":checked")) {
-                            var count = node.data("properties")["count"];
-                            if (count != null) {
-                                count = count / maxVertexCount;
-                                // surface of nodes is proportional to count
-                                return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
-                            }
-                        }
-                        return 10;
-                    },
-                    "text-valign": "center",
-                    "color": "black",
-                    // this function changes the text color according to the background color
-                    // unnecessary atm because only light colors can be generated
-                    /* function (node) {
-                     var label = getLabel(node, vertexLabelKey, useDefaultLabel);
-                     var bgColor = colorMap[label];
-                     if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
-                     return "white";
-                     }
-                     return "black";
-                     },*/
-                    // set background color according to color map
-                    "background-color": function (node) {
-                        var label = getLabel(node, vertexLabelKey, useDefaultLabel);
-                        var color = colorMap[label];
-                        var result = "#";
-                        result += ("0" + color[0].toString(16)).substr(-2);
-                        result += ("0" + color[1].toString(16)).substr(-2);
-                        result += ("0" + color[2].toString(16)).substr(-2);
-                        return result;
-                    },
-
-                    // size of nodes can be determined by property count
-                    // count specifies that the node stands for
-                    // 1 or more other nodes
-                    "width": function (node) {
-                        if ($("#showCountAsSize").is(":checked")) {
-                            var count = node.data("properties")["count"];
-                            if (count != null) {
-                                count = count / maxVertexCount;
-                                // surface of nodes is proportional to count
-                                return Math.sqrt(count * 1000000 / Math.PI) + "px";
-                            }
-                        }
-                        return "60px";
-
-                    },
-                    "height": function (node) {
-                        if ($("#showCountAsSize").is(":checked")) {
-                            var count = node.data("properties")["count"];
-                            if (count != null) {
-                                count = count / maxVertexCount;
-                                // surface of nodes is proportional to count
-                                return Math.sqrt(count * 1000000 / Math.PI) + "px";
-                            }
-                        }
-                        return "60px";
-                    },
-                    "text-wrap": "wrap"
-                })
-                .selector("edge")
-                .css({
-                    // layout of edge and edge label
-                    "content": function (edge) {
-
-                        if (!$("#showEdgeLabels").is(":checked")) {
-                            return "";
-                        }
-
-                        var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
-
-                        var properties = edge.data("properties");
-
-                        if (properties["count"] != null) {
-                            labelString += " (" + properties["count"] + ")";
-                        }
-
-                        return labelString;
-                    },
-                    // if the count shall effect the vertex size, set font size accordingly
-                    "font-size": function (node) {
-                        if ($("#showCountAsSize").is(":checked")) {
-                            var count = node.data("properties")["count"];
-                            if (count != null) {
-                                count = count / maxVertexCount;
-                                // surface of nodes is proportional to count
-                                return Math.max(2, Math.sqrt(count * 60));
-                            }
-                        }
-                        return 10;
-                    },
-                    "line-color": "#999",
-                    // width of edges can be determined by property count
-                    // count specifies that the edge represents 1 or more other edges
-                    "width": function (edge) {
-                        if ($("#showCountAsSize").is(":checked")) {
-                            var count = edge.data("properties")["count"];
-                            if (count != null) {
-                                count = count / maxEdgeCount;
-                                return Math.sqrt(count * 1000);
-                            }
-                        }
-                        return 2;
-                    },
-                    "target-arrow-shape": "triangle",
-                    "target-arrow-color": "#000"
-                })
-                // properties of edges and nodes in special states
-                // e.g. invisible or faded
-                .selector(":selected")
-                .css({
-                    "background-color": "black",
-                    "line-color": "black",
-                    "target-arrow-color": "black",
-                    "source-arrow-color": "black"
-                })
-                .selector(".faded")
-                .css({
-                    "opacity": 0.25,
-                    "text-opacity": 0
-                })
-                .selector(".invisible")
-                .css({
-                    "opacity": 0,
-                    "text-opacity": 0
-                }),
-            elements: {
-                nodes: nodes,
-                edges: edges
-            },
-
-            layout: layout,
-
-            ready: function () {
-                window.cy = this;
-                cy.elements().unselectify();
-                // if a node is selected, fade all edges and nodes
-                // that are not in direct neighborhood of the node
-                cy.on("tap", "node", function (e) {
-                    var node = e.cyTarget;
-                    var neighborhood = node.neighborhood().add(node);
-
-                    cy.elements().addClass("faded");
-                    neighborhood.removeClass("faded");
-                });
-                // remove fading by clicking somewhere else
-                cy.on("tap", function (e) {
-
-                    if (e.cyTarget === cy) {
-                        cy.elements().removeClass("faded");
-                    }
-                });
-                // add a property box whenever a node or edge is
-                // selected
-                cy.elements().qtip({
-                    content: function () {
-                        var qtipText = "";
-                        for (var key in this.data()) {
-                            if (key != "properties" && key != "pie_parameters") {
-                                qtipText += key + " : " + this.data(key) + "<br>";
-
-                            }
-                        }
-                        var properties = this.data("properties");
-                        for (var property in properties) {
-                            if (properties.hasOwnProperty(property)) {
-                                qtipText += property + " : " + properties[property] + "<br>";
-                            }
-                        }
-                        return qtipText;
-                    },
-                    position: {
-                        my: "top center",
-                        at: "bottom center"
-                    },
-                    style: {
-                        classes: "MyQtip"
-                    }
-                });
-            }
-        });
-
-    });
     changed = false;
 }
 
@@ -458,8 +274,10 @@ function initializeOtherMenus(keys) {
 }
 
 function redrawIfNotChanged() {
-    if(!changed) {
-        showGraph(bufferedData, false, true);
+    if (!changed) {
+        useDefaultLabel = false;
+        useForceLayout = true;
+        drawGraph(bufferedData);
     }
 }
 
@@ -1044,6 +862,7 @@ function resetPage() {
     $("#showFilters").prop("checked", false);
     $("#showEdgeLabels").prop("checked", false);
     $("#showCountAsSize").prop("checked", false);
+    $("#hideNullGroups").prop("checked", false);
     $("#databases").val("default");
 }
 
@@ -1084,7 +903,7 @@ function getLabel(element, key, useDefaultLabel) {
     return label;
 }
 
-function chooseLayout(useForceLayout) {
+function chooseLayout() {
 // options for the force layout
     var cose = {
         name: "cose",
@@ -1165,13 +984,13 @@ function chooseLayout(useForceLayout) {
 
     var radialRandom = {
         name: 'preset',
-        positions: function(node) {
+        positions: function (node) {
 
             var r = Math.random() * 1000001;
             var theta = Math.random() * 2 * (Math.PI);
             return {
-                x: Math.sqrt(r)*Math.sin(theta),
-                y: Math.sqrt(r)*Math.cos(theta)
+                x: Math.sqrt(r) * Math.sin(theta),
+                y: Math.sqrt(r) * Math.cos(theta)
             };
         },
         zoom: undefined,
@@ -1190,4 +1009,229 @@ function chooseLayout(useForceLayout) {
     } else {
         return radialRandom;
     }
+}
+
+function buildCytoscape() {
+    return cytoscape({
+        container: document.getElementById("canvas"),
+        style: cytoscape.stylesheet()
+            .selector("node")
+            .css({
+
+                // define label content and font
+                "content": function (node) {
+
+                    var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
+
+                    var properties = node.data("properties");
+
+                    if (properties["count"] != null) {
+                        labelString += " (" + properties["count"] + ")";
+                    }
+                    return labelString;
+                },
+                // if the count shall effect the vertex size, set font size accordingly
+                "font-size": function (node) {
+                    if ($("#showCountAsSize").is(":checked")) {
+                        var count = node.data("properties")["count"];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of nodes is proportional to count
+                            return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
+                        }
+                    }
+                    return 10;
+                },
+                "text-valign": "center",
+                "color": "black",
+                // this function changes the text color according to the background color
+                // unnecessary atm because only light colors can be generated
+                /* function (node) {
+                 var label = getLabel(node, vertexLabelKey, useDefaultLabel);
+                 var bgColor = colorMap[label];
+                 if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
+                 return "white";
+                 }
+                 return "black";
+                 },*/
+                // set background color according to color map
+                "background-color": function (node) {
+                    var label = getLabel(node, vertexLabelKey, useDefaultLabel);
+                    var color = colorMap[label];
+                    var result = "#";
+                    result += ("0" + color[0].toString(16)).substr(-2);
+                    result += ("0" + color[1].toString(16)).substr(-2);
+                    result += ("0" + color[2].toString(16)).substr(-2);
+                    return result;
+                },
+
+                // size of nodes can be determined by property count
+                // count specifies that the node stands for
+                // 1 or more other nodes
+                "width": function (node) {
+                    if ($("#showCountAsSize").is(":checked")) {
+                        var count = node.data("properties")["count"];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of nodes is proportional to count
+                            return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                        }
+                    }
+                    return "60px";
+
+                },
+                "height": function (node) {
+                    if ($("#showCountAsSize").is(":checked")) {
+                        var count = node.data("properties")["count"];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of nodes is proportional to count
+                            return Math.sqrt(count * 1000000 / Math.PI) + "px";
+                        }
+                    }
+                    return "60px";
+                },
+                "text-wrap": "wrap"
+            })
+            .selector("edge")
+            .css({
+                // layout of edge and edge label
+                "content": function (edge) {
+
+                    if (!$("#showEdgeLabels").is(":checked")) {
+                        return "";
+                    }
+
+                    var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
+
+                    var properties = edge.data("properties");
+
+                    if (properties["count"] != null) {
+                        labelString += " (" + properties["count"] + ")";
+                    }
+
+                    return labelString;
+                },
+                // if the count shall effect the vertex size, set font size accordingly
+                "font-size": function (node) {
+                    if ($("#showCountAsSize").is(":checked")) {
+                        var count = node.data("properties")["count"];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of nodes is proportional to count
+                            return Math.max(2, Math.sqrt(count * 60));
+                        }
+                    }
+                    return 10;
+                },
+                "line-color": "#999",
+                // width of edges can be determined by property count
+                // count specifies that the edge represents 1 or more other edges
+                "width": function (edge) {
+                    if ($("#showCountAsSize").is(":checked")) {
+                        var count = edge.data("properties")["count"];
+                        if (count != null) {
+                            count = count / maxEdgeCount;
+                            return Math.sqrt(count * 1000);
+                        }
+                    }
+                    return 2;
+                },
+                "target-arrow-shape": "triangle",
+                "target-arrow-color": "#000"
+            })
+            // properties of edges and nodes in special states
+            // e.g. invisible or faded
+            .selector(".faded")
+            .css({
+                "opacity": 0.25,
+                "text-opacity": 0
+            })
+            .selector(".invisible")
+            .css({
+                "opacity": 0,
+                "text-opacity": 0
+            }),
+        ready: function () {
+            window.cy = this;
+            cy.elements().unselectify();
+            // if a node is selected, fade all edges and nodes
+            // that are not in direct neighborhood of the node
+            cy.on("tap", "node", function (e) {
+                var node = e.cyTarget;
+                var neighborhood = node.neighborhood().add(node);
+
+                cy.elements().addClass("faded");
+                neighborhood.removeClass("faded");
+            });
+            // remove fading by clicking somewhere else
+            cy.on("tap", function (e) {
+
+                if (e.cyTarget === cy) {
+                    cy.elements().removeClass("faded");
+                }
+            });
+            // add a property box whenever a node or edge is
+            // selected
+
+        }
+    });
+}
+
+function addQtip() {
+    cy.elements().qtip({
+        content: function () {
+            var qtipText = "";
+            for (var key in this.data()) {
+                if (key != "properties" && key != "pie_parameters") {
+                    qtipText += key + " : " + this.data(key) + "<br>";
+
+                }
+            }
+            var properties = this.data("properties");
+            for (var property in properties) {
+                if (properties.hasOwnProperty(property)) {
+                    qtipText += property + " : " + properties[property] + "<br>";
+                }
+            }
+            return qtipText;
+        },
+        position: {
+            my: "top center",
+            at: "bottom center"
+        },
+        style: {
+            classes: "MyQtip"
+        }
+    });
+}
+
+function hideNullGroups() {
+    var vertexKeys = getSelectedVertexKeys();
+    var edgeKeys = getSelectedEdgeKeys();
+
+    var vertices = cy.nodes();
+    var edges = cy.edges();
+
+
+    for (var i = 0; i < vertices.length; i++) {
+        var vertex = vertices[i];
+        for (var j = 0; j < vertexKeys.length; j++) {
+            if (vertex.data().properties[vertexKeys[j]] == "NULL") {
+                vertex.remove();
+                break;
+            }
+        }
+    }
+
+    for (var k = 0; k < edges.length; k++) {
+        var edge = edges[k];
+        for (var l = 0; l < edgeKeys.length; l++) {
+            if (edge.data().properties[edgeKeys[l]] == "NULL") {
+                edge.remove();
+                break;
+            }
+        }
+    }
+
 }
