@@ -360,9 +360,6 @@ function initializeFilterKeyMenus(keys) {
     }
 
 
-    // on click, toggle filter menu
-    $('#showFilters').on('click', toggleFilterMenu);
-
     // on click, select filters
     vertexFilters.find('.checkbox').on('click', elementSelected);
     vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
@@ -373,24 +370,9 @@ function initializeFilterKeyMenus(keys) {
         ' class="checkbox"/>NONE</li>');
 
     edgeFilterSelect.find('.checkbox[value=NONE]').on('click', NONEFilterClicked);
-}
 
-/**
- * Show or hide the filter menu
- */
-function toggleFilterMenu() {
-    var vertexFilters = $('#vertexFilters');
-    var edgeFilters = $('#edgeFilters');
-    var filterLabels = $('.filterLabel')
-    if (this.checked) {
-        filterLabels.show();
-        vertexFilters.show();
-        edgeFilters.show();
-    } else {
-        filterLabels.hide();
-        vertexFilters.hide();
-        edgeFilters.hide();
-    }
+    vertexFilters.show();
+    edgeFilters.show();
 }
 
 /**
@@ -800,7 +782,6 @@ function initializeAggregateFunctionMenus(keys) {
 function hideElements() {
     $('#loading').hide();
     $('.label').hide();
-    $('.filterLabel').hide();
     $('.show').hide();
     $('.dropDown').hide();
     $('.aggrFuncs').hide();
@@ -867,15 +848,11 @@ function getSelectedEdgeAggregateFunctions() {
  * @returns {Array} selected edge filters
  */
 function getSelectedVertexFilters() {
-    if ($('#showFilters').is(':checked')) {
         return $.map(
             $('#vertexFilters').find('dt a .multiSel span'),
             function (item) {
                 return $(item).text();
             });
-    } else {
-        return [];
-    }
 }
 
 /**
@@ -883,23 +860,17 @@ function getSelectedVertexFilters() {
  * @returns {Array} selected edge filters
  */
 function getSelectedEdgeFilters() {
-    if ($('#showFilters').is(':checked')) {
         return $.map(
             $('#edgeFilters').find('dt a .multiSel span'),
             function (item) {
                 return $(item).text();
             });
-
-    } else {
-        return [];
-    }
 }
 
 function isNONEFilterSelected() {
-    if ($('#showFilters').is(':checked')) {
         var filters = $('#edgeFilters').find('dt a .multiSel span[title="NONE"]');
         return filters.length != 0;
-    }
+
 }
 
 /**
@@ -916,7 +887,6 @@ function isValidRequest(request) {
  * Reset the page on reload
  */
 function resetPage() {
-    $('#showFilters').prop('checked', false);
     $('#showEdgeLabels').prop('checked', false);
     $('#showCountAsSize').prop('checked', false);
     $('#hideNullGroups').prop('checked', false);
@@ -1328,7 +1298,7 @@ function NONEFilterClicked() {
             .attr('disabled', true);
 
         multiSel.find('span:not(.instruction)').remove();
-        multiSel.find('.instruction').hide();
+        edgeFilters.find('.instruction').hide();
         multiSel.append('<span title="NONE">NONE</span>');
 
     } else {
