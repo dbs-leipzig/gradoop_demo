@@ -60,6 +60,12 @@ public class GroupingRequest {
   private String[] edgeAggrFuncs;
 
   /**
+   * true, if all edges shall be filtered
+   */
+
+  private boolean filterAllEdges;
+
+  /**
    * set the database name
    *
    * @param dbName database name
@@ -199,5 +205,13 @@ public class GroupingRequest {
       "\n" + "Edge aggrFunc: " + edgeAggrFuncs + "\n" + "Vertex filters: " +
       Arrays.toString(vertexFilters) + "\n" + "Edge filters: " + Arrays.toString(edgeFilters) +
       "\n";
+  }
+
+  public boolean getFilterAllEdges() {
+    return filterAllEdges;
+  }
+
+  public void setFilterAllEdges(boolean filterAllEdges) {
+    this.filterAllEdges = filterAllEdges;
   }
 }

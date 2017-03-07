@@ -17,11 +17,7 @@
 
 package org.gradoop.demos.grouping.server;
 
-import org.gradoop.demos.grouping.server.functions.LabelFilter;
-import org.gradoop.demos.grouping.server.functions.LabelGroupReducer;
-import org.gradoop.demos.grouping.server.functions.LabelMapper;
-import org.gradoop.demos.grouping.server.functions.LabelReducer;
-import org.gradoop.demos.grouping.server.functions.PropertyKeyMapper;
+import org.gradoop.demos.grouping.server.functions.*;
 import org.gradoop.demos.grouping.server.pojo.GroupingRequest;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -349,8 +345,16 @@ public class RequestHandler {
 
     LogicalGraph graph = source.getLogicalGraph();
 
-    graph = graph.subgraph(new LabelFilter<>(request.getVertexFilters()),
-      new LabelFilter<>(request.getEdgeFilters()));
+    //if no edges are requested, remove them as early as possible
+    //else, apply the normal filters
+    if(request.getFilterAllEdges()) {
+      graph = graph.subgraph(new LabelFilter<>(request.getVertexFilters()),
+              new AcceptNoneFilter<>());
+    } else{
+      graph = graph.subgraph(new LabelFilter<>(request.getVertexFilters()),
+              new LabelFilter<>(request.getEdgeFilters()));
+    }
+
 
     //construct the grouping with the parameters send by the request
     Grouping.GroupingBuilder builder = new Grouping.GroupingBuilder();

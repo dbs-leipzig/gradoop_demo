@@ -136,6 +136,7 @@ $(document).ready(function () {
         request.edgeAggrFuncs = getSelectedEdgeAggregateFunctions();
         request.vertexFilters = getSelectedVertexFilters();
         request.edgeFilters = getSelectedEdgeFilters();
+        request.filterAllEdges = isNONEFilterSelected();
 
         // validate request
         if (isValidRequest(request)) {
@@ -367,6 +368,11 @@ function initializeFilterKeyMenus(keys) {
     vertexFilters.find('.checkbox').on('click', vertexFilterSelected);
     edgeFilters.find('.checkbox').on('click', elementSelected);
     edgeFilters.find('.checkbox').on('click', edgeFilterSelected);
+
+    edgeFilterSelect.append( '<li><input type="checkbox" value="NONE"' +
+        ' class="checkbox"/>NONE</li>');
+
+    edgeFilterSelect.find('.checkbox[value=NONE]').on('click', NONEFilterClicked);
 }
 
 /**
@@ -889,6 +895,13 @@ function getSelectedEdgeFilters() {
     }
 }
 
+function isNONEFilterSelected() {
+    if ($('#showFilters').is(':checked')) {
+        var filters = $('#edgeFilters').find('dt a .multiSel span[title="NONE"]');
+        return filters.length != 0;
+    }
+}
+
 /**
  * Checks if a grouping request is valid (all fields are set).
  * @param request
@@ -1294,6 +1307,46 @@ function hideDisconnected() {
         }
     }
 }
+
+function NONEFilterClicked() {
+
+    var edgeFilters = $('#edgeFilters');
+    var edgePropertyKeys = $('#edgePropertyKeys');
+    var edgeAggrFuncs = $('#edgeAggrFuncs');
+
+    var multiSel = edgeFilters.find('dt a .multiSel');
+
+    if ($(this).is(':checked')) {
+        edgeFilters.find('.checkbox[value!="NONE"]')
+            .attr('disabled', true)
+            .attr('checked', false);
+
+        edgePropertyKeys.find('.checkbox')
+            .attr('disabled', true);
+
+        edgeAggrFuncs.find('.checkbox')
+            .attr('disabled', true);
+
+        multiSel.find('span:not(.instruction)').remove();
+        multiSel.find('.instruction').hide();
+        multiSel.append('<span title="NONE">NONE</span>');
+
+    } else {
+        edgeFilters.find('.checkbox')
+            .attr('disabled', false);
+
+        edgePropertyKeys.find('.checkbox')
+            .attr('disabled', false);
+
+        edgeAggrFuncs.find('.checkbox')
+            .attr('disabled', false);
+
+        multiSel.find('span[title="NONE"]').remove();
+        edgeFilters.find('.instruction').show();
+    }
+}
+
+
 
 function hideEdges() {
     cy.edges().remove();
