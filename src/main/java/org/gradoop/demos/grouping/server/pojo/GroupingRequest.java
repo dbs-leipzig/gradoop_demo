@@ -129,6 +129,13 @@ public class GroupingRequest {
   }
 
   /**
+   * set if all edges should be filtered
+   */
+  public void setFilterAllEdges(boolean filterAllEdges) {
+    this.filterAllEdges = filterAllEdges;
+  }
+
+  /**
    * get the database name
    *
    * @return database name
@@ -192,6 +199,16 @@ public class GroupingRequest {
     return edgeFilters;
   }
 
+
+  /**
+   * get if all edges shall be filtered
+   *
+   * @return true, if all edges shall be filtered
+   */
+  public boolean getFilterAllEdges() {
+    return filterAllEdges;
+  }
+
   /**
    * Returns a human readable representation of the request.
    *
@@ -205,13 +222,5 @@ public class GroupingRequest {
       "\n" + "Edge aggrFunc: " + edgeAggrFuncs + "\n" + "Vertex filters: " +
       Arrays.toString(vertexFilters) + "\n" + "Edge filters: " + Arrays.toString(edgeFilters) +
       "\n";
-  }
-
-  public boolean getFilterAllEdges() {
-    return filterAllEdges;
-  }
-
-  public void setFilterAllEdges(boolean filterAllEdges) {
-    this.filterAllEdges = filterAllEdges;
   }
 }

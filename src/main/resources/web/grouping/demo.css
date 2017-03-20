@@ -33,45 +33,12 @@ button {
     font-weight: bold;
 }
 
-#sidebar {
+#canvas {
     float:left;
-    width:300px;
-    background-color:#F0F0F0 ;
-    padding: 5px;
-    text-align:center;
-    border-radius: 25px;
-    border: 3px solid #808080;
-}
-
-#logo{
-    width: 280px;
-}
-
-#stats {
-    margin: 5px;
-    font-size: 12px;
-    font-weight: bold;
-    color: #808080;
-    text-align: left;
-}
-
-#graphs {
-    margin: 5px;
-    font-size: 12px;
-    font-weight: bold;
-    color: #808080;
-    text-align: left;
-}
-
-#templates{
-    width: 227px;
-}
-
-#load {
-    width:55px;
-}
-
-#exec{
+    height:calc(100vh - 10px);
+    width: calc(100% - 320px);
+    color:red;
+    font-size:16px;
 }
 
 #checkbox {
@@ -84,13 +51,20 @@ button {
 
 }
 
-#canvas {
-    float:left;
-    height:calc(100vh - 10px);
-    width: calc(100% - 320px);
-    color:red;
-    font-size:16px;
- }
+#exec{
+}
+
+#graphs {
+    margin: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #808080;
+    text-align: left;
+}
+
+#load {
+    width:55px;
+}
 
 #loading {
     position: absolute;
@@ -100,7 +74,32 @@ button {
     background-size: 160px 120px;
 }
 
+#logo{
+    width: 280px;
+}
 
+#sidebar {
+    float:left;
+    width:300px;
+    background-color:#F0F0F0 ;
+    padding: 5px;
+    text-align:center;
+    border-radius: 25px;
+    border: 3px solid #808080;
+}
+
+#stats {
+    margin: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #808080;
+    text-align: left;
+}
+
+
+#templates{
+    width: 227px;
+}
 
 select {
     float: left;

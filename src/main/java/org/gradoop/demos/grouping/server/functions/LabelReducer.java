@@ -22,7 +22,7 @@ import org.apache.flink.api.common.functions.ReduceFunction;
 import java.util.Set;
 
 /**
- * Reduce the dataset of labels to one set.
+ * Reduce the DEataset of labels to one set.
  */
 public class LabelReducer implements ReduceFunction<Set<String>> {
 

@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Reduce the dataset of properties, represented as tuples3 of label of vertices with this
+ * Reduce the Dataset of properties, represented as tuples3 of label of vertices with this
  * property, property key and a boolean specifying if it is numerical into one tuple3 with all
  * vertex labels in the first field.
  */

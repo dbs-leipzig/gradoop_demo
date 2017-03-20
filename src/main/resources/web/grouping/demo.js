@@ -162,6 +162,169 @@ $(document).ready(function () {
     });
 });
 
+function buildCytoscape() {
+    return cytoscape({
+        container: document.getElementById('canvas'),
+        style: cytoscape.stylesheet()
+            .selector('node')
+            .css({
+                // define label content and font
+                'content': function (node) {
+
+                    var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
+
+                    var properties = node.data('properties');
+
+                    if (properties['count'] != null) {
+                        labelString += ' (' + properties['count'] + ')';
+                    }
+                    return labelString;
+                },
+                // if the count shall effect the vertex size, set font size accordingly
+                'font-size': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of vertices is proportional to count
+                            return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
+                        }
+                    }
+                    return 10;
+                },
+                'text-valign': 'center',
+                'color': 'black',
+                // this function changes the text color according to the background color
+                // unnecessary atm because only light colors can be generated
+                /* function (vertices) {
+                 var label = getLabel(vertices, vertexLabelKey, useDefaultLabel);
+                 var bgColor = colorMap[label];
+                 if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
+                 return 'white';
+                 }
+                 return 'black';
+                 },*/
+                // set background color according to color map
+                'background-color': function (node) {
+                    var label = getLabel(node, vertexLabelKey, useDefaultLabel);
+                    var color = colorMap[label];
+                    var result = '#';
+                    result += ('0' + color[0].toString(16)).substr(-2);
+                    result += ('0' + color[1].toString(16)).substr(-2);
+                    result += ('0' + color[2].toString(16)).substr(-2);
+                    return result;
+                },
+
+                /* size of vertices can be determined by property count
+                 count specifies that the vertex stands for
+                 1 or more other vertices */
+                'width': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of vertex is proportional to count
+                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
+                        }
+                    }
+                    return '60px';
+
+                },
+                'height': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of vertex is proportional to count
+                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
+                        }
+                    }
+                    return '60px';
+                },
+                'text-wrap': 'wrap'
+            })
+            .selector('edge')
+            .css({
+                'curve-style': 'bezier',
+                // layout of edge and edge label
+                'content': function (edge) {
+
+                    if (!$('#showEdgeLabels').is(':checked')) {
+                        return '';
+                    }
+
+                    var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
+
+                    var properties = edge.data('properties');
+
+                    if (properties['count'] != null) {
+                        labelString += ' (' + properties['count'] + ')';
+                    }
+
+                    return labelString;
+                },
+                // if the count shall effect the vertex size, set font size accordingly
+                'font-size': function (node) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = node.data('properties')['count'];
+                        if (count != null) {
+                            count = count / maxVertexCount;
+                            // surface of vertices is proportional to count
+                            return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
+                        }
+                    }
+                    return 10;
+                },
+                'line-color': '#999',
+                // width of edges can be determined by property count
+                // count specifies that the edge represents 1 or more other edges
+                'width': function (edge) {
+                    if ($('#showCountAsSize').is(':checked')) {
+                        var count = edge.data('properties')['count'];
+                        if (count != null) {
+                            count = count / maxEdgeCount;
+                            return Math.sqrt(count * 1000);
+                        }
+                    }
+                    return 2;
+                },
+                'target-arrow-shape': 'triangle',
+                'target-arrow-color': '#000'
+            })
+            // properties of edges and vertices in special states, e.g. invisible or faded
+            .selector('.faded')
+            .css({
+                'opacity': 0.25,
+                'text-opacity': 0
+            })
+            .selector('.invisible')
+            .css({
+                'opacity': 0,
+                'text-opacity': 0
+            }),
+        ready: function () {
+            window.cy = this;
+            cy.elements().unselectify();
+            /* if a vertex is selected, fade all edges and vertices
+            that are not in direct neighborhood of the vertex */
+            cy.on('tap', 'node', function (e) {
+                var node = e.cyTarget;
+                var neighborhood = node.neighborhood().add(node);
+
+                cy.elements().addClass('faded');
+                neighborhood.removeClass('faded');
+            });
+            // remove fading by clicking somewhere else
+            cy.on('tap', function (e) {
+
+                if (e.cyTarget === cy) {
+                    cy.elements().removeClass('faded');
+                }
+            });
+        }
+    });
+}
+
 /**
  * function called when the server returns the data
  * @param data graph data
@@ -171,7 +334,7 @@ function drawGraph(data) {
     // buffer the data to speed up redrawing
     bufferedData = data;
 
-    // lists of nodes and edges
+    // lists of vertices and edges
     var nodes = data.nodes;
     var edges = data.edges;
 
@@ -181,15 +344,15 @@ function drawGraph(data) {
     // compute maximum count of all vertices, used for scaling the vertex sizes
     maxVertexCount = 0;
     for (var i = 0; i < nodes.length; i++) {
-        var vertex = nodes[i];
-        var vertexCount = Number(vertex['data']['properties']['count']);
+        var node = nodes[i];
+        var vertexCount = Number(node['data']['properties']['count']);
         if ((vertexCount != null) && (vertexCount > maxVertexCount)) {
             maxVertexCount = vertexCount;
         }
         if (!useDefaultLabel && vertexLabelKey != 'label') {
-            labels.add(vertex['data']['properties'][vertexLabelKey]);
+            labels.add(node['data']['properties'][vertexLabelKey]);
         } else {
-            labels.add(vertex['data']['label']);
+            labels.add(node['data']['label']);
         }
     }
 
@@ -313,6 +476,10 @@ function initializeOtherMenus(keys) {
     initializeAggregateFunctionMenus(keys);
 }
 
+/**
+ * Check if the selected property keys, filters and aggregation functions have changed. If not, redraw the graph.
+ * This is implemented to ensure that no accidental redraws happen.
+ */
 function redrawIfNotChanged() {
     if (!changed) {
         useDefaultLabel = false;
@@ -369,7 +536,7 @@ function initializeFilterKeyMenus(keys) {
     edgeFilterSelect.append( '<li><input type="checkbox" value="NONE"' +
         ' class="checkbox"/>NONE</li>');
 
-    edgeFilterSelect.find('.checkbox[value=NONE]').on('click', NONEFilterClicked);
+    edgeFilterSelect.find('.checkbox[value=NONE]').on('click', NONEFilterSelected);
 
     vertexFilters.show();
     edgeFilters.show();
@@ -460,6 +627,28 @@ function initializePropertyKeyMenus(keys) {
 }
 
 /**
+ * function that is executed if a key is selected from any of the 2 propertyKeys boxes
+ */
+
+function elementSelected() {
+    changed = true;
+    var title = $(this).val();
+    var propertyKeys = $(this).closest('.dropDown');
+
+    // if a key is selected, add it as a span to the title of the property keys box
+    // else make the instruction visible
+    if ($(this).is(':checked')) {
+        var html = '<span title="' + title + '">' + title + '</span>';
+        propertyKeys.find('.multiSel').append(html);
+        propertyKeys.find('.instruction').hide();
+    } else {
+        var multiSel = propertyKeys.find('.multiSel');
+        multiSel.find('span[title="' + title + '"]').remove();
+        if (multiSel.children().length == 0) propertyKeys.find('.instruction').show();
+    }
+}
+
+/**
  * create a new entry in the vertex filter map via a vertex key
  * @param vertexKey key that shall be inserted into the map
  */
@@ -504,28 +693,6 @@ function createEdgeFilterMapEntry(edgeKey) {
         } else {
             edgeFilterMap[label].push(edgeKeyObject);
         }
-    }
-}
-
-/**
- * function that is executed if a key is selected from any of the 2 propertyKeys boxes
- */
-
-function elementSelected() {
-    changed = true;
-    var title = $(this).val();
-    var propertyKeys = $(this).closest('.dropDown');
-
-    // if a key is selected, add it as a span to the title of the property keys box
-    // else make the instruction visible
-    if ($(this).is(':checked')) {
-        var html = '<span title="' + title + '">' + title + '</span>';
-        propertyKeys.find('.multiSel').append(html);
-        propertyKeys.find('.instruction').hide();
-    } else {
-        var multiSel = propertyKeys.find('.multiSel');
-        multiSel.find('span[title="' + title + '"]').remove();
-        if (multiSel.children().length == 0) propertyKeys.find('.instruction').show();
     }
 }
 
@@ -1040,173 +1207,9 @@ function chooseLayout() {
     }
 }
 
-function buildCytoscape() {
-    return cytoscape({
-        container: document.getElementById('canvas'),
-        style: cytoscape.stylesheet()
-            .selector('node')
-            .css({
-                // define label content and font
-                'content': function (node) {
-
-                    var labelString = getLabel(node, vertexLabelKey, useDefaultLabel);
-
-                    var properties = node.data('properties');
-
-                    if (properties['count'] != null) {
-                        labelString += ' (' + properties['count'] + ')';
-                    }
-                    return labelString;
-                },
-                // if the count shall effect the vertex size, set font size accordingly
-                'font-size': function (node) {
-                    if ($('#showCountAsSize').is(':checked')) {
-                        var count = node.data('properties')['count'];
-                        if (count != null) {
-                            count = count / maxVertexCount;
-                            // surface of nodes is proportional to count
-                            return Math.max(2, Math.sqrt(count * 10000 / Math.PI));
-                        }
-                    }
-                    return 10;
-                },
-                'text-valign': 'center',
-                'color': 'black',
-                // this function changes the text color according to the background color
-                // unnecessary atm because only light colors can be generated
-                /* function (node) {
-                 var label = getLabel(node, vertexLabelKey, useDefaultLabel);
-                 var bgColor = colorMap[label];
-                 if (bgColor[0] + bgColor[1] + (bgColor[2] * 0.7) < 300) {
-                 return 'white';
-                 }
-                 return 'black';
-                 },*/
-                // set background color according to color map
-                'background-color': function (node) {
-                    var label = getLabel(node, vertexLabelKey, useDefaultLabel);
-                    var color = colorMap[label];
-                    var result = '#';
-                    result += ('0' + color[0].toString(16)).substr(-2);
-                    result += ('0' + color[1].toString(16)).substr(-2);
-                    result += ('0' + color[2].toString(16)).substr(-2);
-                    return result;
-                },
-
-                // size of nodes can be determined by property count
-                // count specifies that the node stands for
-                // 1 or more other nodes
-                'width': function (node) {
-                    if ($('#showCountAsSize').is(':checked')) {
-                        var count = node.data('properties')['count'];
-                        if (count != null) {
-                            count = count / maxVertexCount;
-                            // surface of nodes is proportional to count
-                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
-                        }
-                    }
-                    return '60px';
-
-                },
-                'height': function (node) {
-                    if ($('#showCountAsSize').is(':checked')) {
-                        var count = node.data('properties')['count'];
-                        if (count != null) {
-                            count = count / maxVertexCount;
-                            // surface of nodes is proportional to count
-                            return Math.sqrt(count * 1000000 / Math.PI) + 'px';
-                        }
-                    }
-                    return '60px';
-                },
-                'text-wrap': 'wrap'
-            })
-            .selector('edge')
-            .css({
-                'curve-style': 'bezier',
-                // layout of edge and edge label
-                'content': function (edge) {
-
-                    if (!$('#showEdgeLabels').is(':checked')) {
-                        return '';
-                    }
-
-                    var labelString = getLabel(edge, edgeLabelKey, useDefaultLabel);
-
-                    var properties = edge.data('properties');
-
-                    if (properties['count'] != null) {
-                        labelString += ' (' + properties['count'] + ')';
-                    }
-
-                    return labelString;
-                },
-                // if the count shall effect the vertex size, set font size accordingly
-                'font-size': function (node) {
-                    if ($('#showCountAsSize').is(':checked')) {
-                        var count = node.data('properties')['count'];
-                        if (count != null) {
-                            count = count / maxVertexCount;
-                            // surface of nodes is proportional to count
-                            return Math.max(2, Math.sqrt(count * 60));
-                        }
-                    }
-                    return 10;
-                },
-                'line-color': '#999',
-                // width of edges can be determined by property count
-                // count specifies that the edge represents 1 or more other edges
-                'width': function (edge) {
-                    if ($('#showCountAsSize').is(':checked')) {
-                        var count = edge.data('properties')['count'];
-                        if (count != null) {
-                            count = count / maxEdgeCount;
-                            return Math.sqrt(count * 1000);
-                        }
-                    }
-                    return 2;
-                },
-                'target-arrow-shape': 'triangle',
-                'target-arrow-color': '#000'
-            })
-            // properties of edges and nodes in special states
-            // e.g. invisible or faded
-            .selector('.faded')
-            .css({
-                'opacity': 0.25,
-                'text-opacity': 0
-            })
-            .selector('.invisible')
-            .css({
-                'opacity': 0,
-                'text-opacity': 0
-            }),
-        ready: function () {
-            window.cy = this;
-            cy.elements().unselectify();
-            // if a node is selected, fade all edges and nodes
-            // that are not in direct neighborhood of the node
-            cy.on('tap', 'node', function (e) {
-                var node = e.cyTarget;
-                var neighborhood = node.neighborhood().add(node);
-
-                cy.elements().addClass('faded');
-                neighborhood.removeClass('faded');
-            });
-            // remove fading by clicking somewhere else
-            cy.on('tap', function (e) {
-
-                if (e.cyTarget === cy) {
-                    cy.elements().removeClass('faded');
-                }
-            });
-            // add a property box whenever a node or edge is
-            // selected
-
-        }
-    });
-}
-
+/**
+ * Add a custom Qtip to the vertices and edges of the graph.
+ */
 function addQtip() {
     cy.elements().qtip({
         content: function () {
@@ -1235,19 +1238,22 @@ function addQtip() {
     });
 }
 
+/**
+ * Hide all vertices and edges, that have a NULL property.
+ */
 function hideNullGroups() {
     var vertexKeys = getSelectedVertexKeys();
     var edgeKeys = getSelectedEdgeKeys();
 
-    var vertices = cy.nodes();
+    var nodes = cy.nodes();
     var edges = cy.edges();
 
 
-    for (var i = 0; i < vertices.length; i++) {
-        var vertex = vertices[i];
+    for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
         for (var j = 0; j < vertexKeys.length; j++) {
-            if (vertex.data().properties[vertexKeys[j]] == 'NULL') {
-                vertex.remove();
+            if (node.data().properties[vertexKeys[j]] == 'NULL') {
+                node.remove();
                 break;
             }
         }
@@ -1264,44 +1270,54 @@ function hideNullGroups() {
     }
 }
 
+/**
+ * Function to hide all disconnected vertices (vertices without edges).
+ */
 function hideDisconnected() {
-    var vertices = cy.nodes();
+    var nodes = cy.nodes();
 
-    for (var i = 0; i < vertices.length; i++) {
+    for (var i = 0; i < nodes.length; i++) {
 
-        var vert = vertices[i];
-        if (cy.edges('[source="' + vert.id() + '"]').length == 0) {
-            if (cy.edges('[target="' + vert.id() + '"]').length == 0 ) {
-                vert.remove();
+        var node = nodes[i];
+        if (cy.edges('[source="' + node.id() + '"]').length == 0) {
+            if (cy.edges('[target="' + node.id() + '"]').length == 0 ) {
+                node.remove();
             }
         }
     }
 }
 
-function NONEFilterClicked() {
+/**
+ * Function that is called when the NONE filter is selected
+ */
+function NONEFilterSelected() {
 
     var edgeFilters = $('#edgeFilters');
     var edgePropertyKeys = $('#edgePropertyKeys');
     var edgeAggrFuncs = $('#edgeAggrFuncs');
-
     var multiSel = edgeFilters.find('dt a .multiSel');
 
+    // check if the NONE filters check box is checked
     if ($(this).is(':checked')) {
+        // disable all other edge filters
         edgeFilters.find('.checkbox[value!="NONE"]')
             .attr('disabled', true)
             .attr('checked', false);
 
+        // disable all edge property keys and edge aggregation functions
         edgePropertyKeys.find('.checkbox')
             .attr('disabled', true);
 
         edgeAggrFuncs.find('.checkbox')
             .attr('disabled', true);
 
+        // remove all currently selected edge filters, hide instructions and show NONE filter insted
         multiSel.find('span:not(.instruction)').remove();
         edgeFilters.find('.instruction').hide();
         multiSel.append('<span title="NONE">NONE</span>');
 
     } else {
+        // enable all edge filters, edge property keys and edge aggregation functions
         edgeFilters.find('.checkbox')
             .attr('disabled', false);
 
@@ -1311,13 +1327,15 @@ function NONEFilterClicked() {
         edgeAggrFuncs.find('.checkbox')
             .attr('disabled', false);
 
+        // hide the NONE filter span and show the instructions
         multiSel.find('span[title="NONE"]').remove();
         edgeFilters.find('.instruction').show();
     }
 }
 
-
-
+/**
+ * hide all edges, at the moment this is never called
+ */
 function hideEdges() {
     cy.edges().remove();
 }
