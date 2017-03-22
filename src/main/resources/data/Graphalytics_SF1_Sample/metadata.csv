@@ -1,0 +1,16 @@
+hasInterest;
+isPartOf;
+isSubclassOf;
+knows;creationDate:long
+workAt;workFrom:int
+hasType;
+isLocatedIn;
+studyAt;classYear:int
+company;name:string,url:string
+continent;name:string,url:string
+university;name:string,url:string
+city;name:string,url:string
+tag;name:string,url:string
+tagclass;name:string,url:string
+country;name:string,url:string
+person;birthday:long,browserUsed:string,city:string,continent:string,country:string,creationDate:long,email:string,firstName:string,gender:string,lastName:string,locationIP:string,speaks:string
