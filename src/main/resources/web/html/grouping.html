@@ -1,0 +1,207 @@
+<!--
+* This file is part of Gradoop.
+*
+* Gradoop is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Gradoop is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gradoop Demo | Grouping</title>
+    <link rel="stylesheet" href="../stylesheets/spectre.min.css" />
+    <link rel="stylesheet" href="../stylesheets/spectre-exp.min.css" />
+    <link rel="stylesheet" href="../stylesheets/spectre-icons.min.css" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/jquery.qtip.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/select2.min.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/layout.css">
+
+    <script src="../javascript/jquery-1.11.3.min.js"></script>
+    <script src="../javascript/cytoscape/cytoscape.min.js"></script>
+    <script src="../javascript/cytoscape/cytoscape-qtip.js"></script>
+    <script src="../javascript/jquery.qtip.min.js"></script>
+    <script src="../javascript/cytoscape/dagre.js"></script>
+    <script src="../javascript/cytoscape/cytoscape-dagre.js"></script>
+    <script src="../javascript/select2.full.min.js"></script>
+
+    <script src="../javascript/grouping.js"></script>
+</head>
+<body>
+<header class="page-header">
+    <section class="container">
+        <nav class="navbar">
+            <section class="navbar-section">
+                <a href="/">
+                    <img src="../images/gradoop.svg" class="navbar-logo">
+                </a>
+                <a href="grouping.html" class="btn btn-link">Grouping</a>
+                <a href="cypher.html" class="btn btn-link">Cypher</a>
+            </section>
+            <section class="navbar-section">
+            </section>
+        </nav>
+    </section>
+</header>
+<section class="navbar-spacer">&nbsp;</section>
+
+<div class="content-wrapper">
+    <div class="container">
+        <div class="columns">
+            <div class="column col-4">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Graph Grouping</div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="grouping-query-form">
+                            <fieldset>
+                                <div class="header">
+                                    Input Parameters
+                                    <hr>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="databaseName">Graph</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="databaseName" name="databaseName" style="width:50%">
+                                            <option value="Graphalytics_SF1_Sample">Graphalytics</option>
+                                            <option value="Example">Example</option>
+                                            <option value="Pokec_Sample">Pokec</option>
+                                        </select>
+                                        <button id="showWholeGraph" class="btn input-group-btn">Show the whole graph</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="vertexFilters">
+                                        Vertex Label Filter
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="(Optional) Specify a set of labels to filter the vertices used for grouping.">?</span>
+                                    </label>
+                                    <select id="vertexFilters" name="vertexFilters" multiple style="width:100%">
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="edgeFilters">
+                                        Edge Label Filter
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="(Optional) Specify a set of labels to filter the edges used for grouping.">?</span>
+
+                                    </label>
+                                    <select class="form-select" id="edgeFilters" name="edgeFilters" style="width:100%" multiple>
+                                    </select>
+                                </div>
+                            </fieldset>
+
+                            <fieldset>
+                                <div class="header">
+                                    Vertex Grouping Parameters
+                                    <hr>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="vertexPropertyKeys">
+                                        Grouping Keys
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="Select one or more property keys used for vertex grouping.">?</span>
+                                    </label>
+                                    <select class="form-select" id="vertexPropertyKeys" name="vertexPropertyKeys"  style="width:100%" multiple>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="vertexAggrFuncs">
+                                        Aggregation Function
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="(Optional) The selected aggregation functions are evaluated for each resulting vertex group.">?</span>
+                                    </label>
+                                    <select class="form-select" id="vertexAggrFuncs" name="vertexAggrFuncs"  style="width:100%" multiple>
+                                    </select>
+                                </div>
+                            </fieldset>
+
+                            <fieldset>
+                                <div class="header">
+                                    Edges Grouping Parameters
+                                    <hr>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="edgePropertyKeys">
+                                        Grouping Properties
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="(Optional) Select one or more property keys used for edge grouping.">?</span>
+                                    </label>
+                                    <select class="form-select" id="edgePropertyKeys" name="edgePropertyKeys" style="width:100%" multiple>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="edgeAggrFuncs">
+                                        Aggregation Function
+                                        <span class="option-tooltip tooltip tooltip-right" data-tooltip="(Optional) The selected aggregation functions are evaluated for each resulting edge group.">?</span>
+                                    </label>
+                                    <select class="form-select" id="edgeAggrFuncs" name="edgeAggrFuncs" style="width:100%" multiple>
+                                    </select>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="execute-button btn btn-primary btn-block">Execute</button>
+                    </div>
+                </div>
+            </div>
+            <div class="column col-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="canvas"></div>
+                    </div>
+                    <div class="card-footer">
+                        <h5>View options</h5>
+                        <label class="form-switch" for="showEdgeLabels">
+                            <input type="checkbox" id="showEdgeLabels" name="showEdgeLabels" value="true" class="redraw">
+                            <i class="form-icon"></i> Show Edge Labels
+                        </label>
+                        <label class="form-switch" for="showCountAsSize">
+                            <input type="checkbox" id="showCountAsSize" name="showCountAsSize" value="true" class="redraw">
+                            <i class="form-icon"></i> Adaptive element size
+                            <span class="option-tooltip tooltip tooltip-top" data-tooltip="Requires count aggregate functions.">?</span>
+                        </label>
+                        <label class="form-switch" for="hideNullGroups">
+                            <input type="checkbox" id="hideNullGroups" name="hideNullGroups" value="true" class="redraw">
+                            <i class="form-icon"></i> Hide NULL groups
+                        </label>
+                        <label class="form-switch" for="hideDisconnected">
+                            <input type="checkbox" id="hideDisconnected" name="hideDisconnected" value="true" class="redraw">
+                            <i class="form-icon"></i> Hide disconnected vertices
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="https://github.com/dbs-leipzig/gradoops"> Github </a>
+            |
+            Gradoop Version 0.3.0
+            |
+            Demo Version 0.2.0
+        </p>
+        <p>
+            Licensed under the <a href="https://github.com/dbs-leipzig/gradoop/blob/master/LICENSE" >Apache 2.0 License</a>.
+        </p>
+    </div>
+</footer>
+</body>
+</html>

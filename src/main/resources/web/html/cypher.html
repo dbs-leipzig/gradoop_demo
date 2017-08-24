@@ -1,0 +1,144 @@
+<!--
+* This file is part of Gradoop.
+*
+* Gradoop is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Gradoop is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<html>
+<head>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gradoop Demo</title>
+    <link rel="stylesheet" type="text/css" href="../stylesheets/spectre.min.css" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/spectre-exp.min.css" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/spectre-icons.min.css" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/jquery.qtip.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/select2.min.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/codeMirror/codemirror.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/codeMirror/neo.css">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/layout.css">
+
+    <script src="../javascript/jquery-1.11.3.min.js"></script>
+    <script src="../javascript/cytoscape/cytoscape.min.js"></script>
+    <script src="../javascript/cytoscape/cytoscape-qtip.js"></script>
+    <script src="../javascript/jquery.qtip.min.js"></script>
+    <script src="../javascript/cytoscape/dagre.js"></script>
+    <script src="../javascript/cytoscape/cytoscape-dagre.js"></script>
+    <script src="../javascript/codeMirror/codemirror.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../javascript/codeMirror/cypher.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../javascript/select2.full.min.js"></script>
+    <script src="../javascript/cypher.js"></script>
+</head>
+<body>
+<header class="page-header">
+    <section class="container">
+        <nav class="navbar">
+            <section class="navbar-section">
+                <a href="/">
+                    <img src="../images/gradoop.svg" class="navbar-logo">
+                </a>
+                <a href="grouping.html" class="btn btn-link">Grouping</a>
+                <a href="cypher.html" class="btn btn-link">Cypher</a>
+            </section>
+            <section class="navbar-section">
+            </section>
+        </nav>
+    </section>
+</header>
+<section class="navbar-spacer">&nbsp;</section>
+
+<div class="content-wrapper">
+    <div class="container">
+        <div class="columns">
+            <div class="column col-4">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Cypher Pattern Matching</div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="cypher-query-form">
+                            <div class="form-group">
+                                <label class="form-label" for="databaseName">Graph</label>
+                                <select class="form-select" id="databaseName" name="databaseName"  style="width:100%">
+                                    <option value="Graphalytics_SF1_Sample">Graphalytics</option>
+                                    <option value="Example">Example</option>
+                                    <option value="Pokec_Sample">Pokec</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="query">Query</label>
+                                <textarea id="query" name="query">MATCH (n:person)
+WHERE n.firstName='Paul'</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-switch" for="attacheData">
+                                    <input type="checkbox" id="attacheData" name="attacheData" value="true" checked>
+                                    <i class="form-icon"></i> Attache Attributes
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="query-button btn btn-primary btn-block">Query</button>
+                    </div>
+                </div>
+            </div>
+            <div class="column col-8">
+                <ul class="tab tab-block">
+                    <li class="tab-item">
+                        <a href="javascript:void(0)" class="active" id="show-tab-graph-view">
+                            <i class="icon icon-link"></i> Graph View
+                        </a>
+                    </li>
+                    <li class="tab-item">
+                        <a href="javascript:void(0)" id="show-tab-table-view">
+                            <i class="icon icon-menu"></i> Table View
+                        </a>
+                    </li>
+                </ul>
+                <div id="tab-graph-view">
+                    <div id="canvas"> </div>
+                </div>
+                <div id="tab-table-view" style="display:none">
+                    <table class="table table-striped" id="cypher-result-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="https://github.com/dbs-leipzig/gradoops"> Github </a>
+            |
+            Gradoop Version 0.3.0
+            |
+            Demo Version 0.2.0
+        </p>
+        <p>
+            Licensed under the <a href="https://github.com/dbs-leipzig/gradoop/blob/master/LICENSE" >Apache 2.0 License</a>.
+        </p>
+    </div>
+</footer>
+</body>
+</html>

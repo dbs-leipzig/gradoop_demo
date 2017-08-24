@@ -15,7 +15,7 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server;
+package org.gradoop.demo.server;
 
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.PackagesResourceConfig;
@@ -45,7 +45,7 @@ public class Server {
   /**
    * Path to demo application
    */
-  private static final String APPLICATION_PATH = "gradoop/grouping/demo.html";
+  private static final String APPLICATION_PATH = "gradoop/html/grouping.html";
 
   /**
    * Creates the base URI.
@@ -63,7 +63,7 @@ public class Server {
    */
   private static HttpServer startServer() throws IOException {
     System.out.println("Starting grizzly...");
-    ResourceConfig rc = new PackagesResourceConfig("org/gradoop/demos/grouping/server");
+    ResourceConfig rc = new PackagesResourceConfig("org/gradoop/demo/server");
     rc.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, true);
     HttpServer server = GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
     HttpHandler staticHandler = new StaticHttpHandler(

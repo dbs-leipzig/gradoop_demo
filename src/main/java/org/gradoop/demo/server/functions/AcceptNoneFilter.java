@@ -15,24 +15,23 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server.functions;
+package org.gradoop.demo.server.functions;
 
-import com.google.common.collect.Sets;
-import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.gradoop.common.model.api.entities.EPGMElement;
 
-import java.util.Set;
 
 /**
- * Extracts all labels from an epgm element
+ * Remove all elements from the Dataset.
  * @param <E> epgm element type
  */
-public class LabelMapper<E extends EPGMElement> implements MapFunction<E, Set<String>> {
+public class AcceptNoneFilter<E extends EPGMElement> implements FilterFunction<E> {
+
   /**
    * {@inheritDoc}
    */
   @Override
-  public Set<String> map(E e) throws Exception {
-    return Sets.newHashSet(e.getLabel());
+  public boolean filter(E e) throws Exception {
+    return false;
   }
 }

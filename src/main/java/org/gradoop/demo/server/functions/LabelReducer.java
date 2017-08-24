@@ -15,24 +15,23 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server.functions;
+package org.gradoop.demo.server.functions;
 
-import org.apache.flink.api.common.functions.FilterFunction;
-import org.gradoop.common.model.api.entities.EPGMElement;
+import org.apache.flink.api.common.functions.ReduceFunction;
 
+import java.util.Set;
 
 /**
- * Remove all elements from the Dataset.
- * @param <E> epgm element type
+ * Reduce the DEataset of labels to one set.
  */
-public class AcceptNoneFilter<E extends EPGMElement> implements FilterFunction<E> {
-
+public class LabelReducer implements ReduceFunction<Set<String>> {
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public boolean filter(E e) throws Exception {
-    return false;
+  public Set<String> reduce(Set<String> set1, Set<String> set2) throws Exception {
+    set1.addAll(set2);
+    return set1;
   }
 }

@@ -15,7 +15,7 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server.pojo;
+package org.gradoop.demo.server.pojo;
 
 import java.util.Arrays;
 

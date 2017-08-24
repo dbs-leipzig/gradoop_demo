@@ -15,10 +15,8 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server;
+package org.gradoop.demo.server;
 
-import org.gradoop.demos.grouping.server.functions.*;
-import org.gradoop.demos.grouping.server.pojo.GroupingRequest;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.LocalCollectionOutputFormat;
@@ -29,7 +27,10 @@ import org.codehaus.jettison.json.JSONObject;
 import org.gradoop.common.model.impl.pojo.Edge;
 import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
+import org.gradoop.demo.server.functions.*;
+import org.gradoop.demo.server.pojo.GroupingRequest;
 import org.gradoop.flink.io.impl.csv.CSVDataSource;
+import org.gradoop.flink.model.api.epgm.GraphCollection;
 import org.gradoop.flink.model.api.epgm.LogicalGraph;
 import org.gradoop.flink.model.impl.operators.grouping.Grouping;
 import org.gradoop.flink.model.impl.operators.grouping.GroupingStrategy;
@@ -37,15 +38,12 @@ import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.Cou
 import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.MaxAggregator;
 import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.MinAggregator;
 import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.SumAggregator;
+import org.gradoop.flink.model.impl.operators.matching.common.MatchStrategy;
+import org.gradoop.flink.model.impl.operators.matching.common.statistics.GraphStatistics;
 import org.gradoop.flink.util.GradoopFlinkConfig;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
@@ -67,30 +65,6 @@ public class RequestHandler {
 
   private static final ExecutionEnvironment ENV = ExecutionEnvironment.createLocalEnvironment();
   private GradoopFlinkConfig config = GradoopFlinkConfig.createConfig(ENV);
-
-  /**
-   * Creates a list of all available databases from the file structure under the /data/ folder.
-   *
-   * @return List of folders (datbases) under the /data/ folder.
-   */
-  @GET
-  @Path("/databases")
-  @Produces("application/json;charset=utf-8")
-  public Response getDatabases() {
-
-    JSONArray jsonArray = new JSONArray();
-
-    // get all subfolders of "/data/", they are considered as databases
-    File dataFolder = new File(RequestHandler.class.getResource("/data/").getFile());
-    String[] databases = dataFolder.list((current, name) -> new File(current, name).isDirectory());
-
-    // return the found databases to the client
-    assert databases != null;
-    for(String database : databases) {
-      jsonArray.put(database);
-    }
-    return Response.ok(jsonArray.toString()).build();
-  }
 
   /**
    * Takes a database name via a POST request and returns the keys of all
@@ -124,6 +98,27 @@ public class RequestHandler {
       // if any exception is thrown, return an error to the client
       return Response.serverError().build();
     }
+  }
+
+  @POST
+  @Path("/cypher")
+  @Produces("application/x-www-form-urlencoded;charset=utf-8")
+  public Response executeCypher(
+          @FormParam("databaseName") String databaseName,
+          @FormParam("query") String query,
+          @DefaultValue("false") @FormParam("attacheData") boolean attacheData) {
+    //load the database
+    String path = RequestHandler.class.getResource("/data/" + databaseName).getPath();
+
+    CSVDataSource source = new CSVDataSource(path, config);
+
+    LogicalGraph graph = source.getLogicalGraph();
+
+    // TODO load proper statistics
+    GraphStatistics graphStatistics = new GraphStatistics(1, 1, 1, 1);
+    GraphCollection res = graph.cypher(query,attacheData, MatchStrategy.HOMOMORPHISM, MatchStrategy.ISOMORPHISM, graphStatistics);
+
+    return createResponse(res);
   }
 
   /**
@@ -314,13 +309,15 @@ public class RequestHandler {
 
     LogicalGraph graph = source.getLogicalGraph();
 
-    String json = CytoJSONBuilder.getJSON(
-      graph.getGraphHead().collect().get(0),
+    String json = CytoJSONBuilder.getJSONString(
+      graph.getGraphHead().collect(),
       graph.getVertices().collect(),
       graph.getEdges().collect());
 
     return Response.ok(json).build();
   }
+
+
 
   /**
    * Takes a {@link GroupingRequest}, executes a grouping with the parameters it contains and
@@ -332,7 +329,7 @@ public class RequestHandler {
    * @throws Exception if the collecting of the distributed data fails
    */
   @POST
-  @Path("/data")
+  @Path("/grouping")
   @Produces("application/json;charset=utf-8")
   public Response getData(GroupingRequest request) throws Exception {
 
@@ -355,7 +352,6 @@ public class RequestHandler {
               new LabelFilter<>(request.getEdgeFilters()));
     }
 
-
     //construct the grouping with the parameters send by the request
     Grouping.GroupingBuilder builder = new Grouping.GroupingBuilder();
     int position;
@@ -365,7 +361,6 @@ public class RequestHandler {
       request.setVertexKeys((String[])ArrayUtils.remove(request.getVertexKeys(), position));
     }
     builder.addVertexGroupingKeys(Arrays.asList(request.getVertexKeys()));
-
 
     position = ArrayUtils.indexOf(request.getEdgeKeys(), "label");
     if(position > -1) {
@@ -394,8 +389,6 @@ public class RequestHandler {
       }
     }
 
-
-
     String[] edgeAggrFuncs = request.getEdgeAggrFuncs();
 
     for(String edgeAggrFunc : edgeAggrFuncs) {
@@ -422,24 +415,38 @@ public class RequestHandler {
     graph = builder.build().execute(graph);
 
     // specify the output collections
+    return createResponse(graph);
+  }
+
+  private Response createResponse(GraphCollection graph) {
+    List<GraphHead> resultHead = new ArrayList<>();
+    List<Vertex> resultVertices = new ArrayList<>();
+    List<Edge> resultEdges = new ArrayList<>();
+
+    graph.getGraphHeads().output(new LocalCollectionOutputFormat<>(resultHead));
+    graph.getVertices().output(new LocalCollectionOutputFormat<>(resultVertices));
+    graph.getEdges().output(new LocalCollectionOutputFormat<>(resultEdges));
+
+    return getResponse(resultHead, resultVertices, resultEdges);
+  }
+
+  private Response createResponse(LogicalGraph graph) {
     List<GraphHead> resultHead = new ArrayList<>();
     List<Vertex> resultVertices = new ArrayList<>();
     List<Edge> resultEdges = new ArrayList<>();
 
     graph.getGraphHead().output(new LocalCollectionOutputFormat<>(resultHead));
-
     graph.getVertices().output(new LocalCollectionOutputFormat<>(resultVertices));
-
     graph.getEdges().output(new LocalCollectionOutputFormat<>(resultEdges));
 
+    return getResponse(resultHead, resultVertices, resultEdges);
+  }
 
+  private Response getResponse(List<GraphHead> resultHead, List<Vertex> resultVertices, List<Edge> resultEdges) {
     try {
       ENV.execute();
-
       // build the response JSON from the collections
-
-      String json = CytoJSONBuilder.getJSON(resultHead.get(0), resultVertices, resultEdges);
-
+      String json = CytoJSONBuilder.getJSONString(resultHead, resultVertices, resultEdges);
       return Response.ok(json).build();
 
     } catch (Exception e) {

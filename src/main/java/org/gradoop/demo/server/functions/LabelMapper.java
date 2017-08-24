@@ -15,23 +15,24 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server.functions;
+package org.gradoop.demo.server.functions;
 
-import org.apache.flink.api.common.functions.ReduceFunction;
+import com.google.common.collect.Sets;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.gradoop.common.model.api.entities.EPGMElement;
 
 import java.util.Set;
 
 /**
- * Reduce the DEataset of labels to one set.
+ * Extracts all labels from an epgm element
+ * @param <E> epgm element type
  */
-public class LabelReducer implements ReduceFunction<Set<String>> {
-
+public class LabelMapper<E extends EPGMElement> implements MapFunction<E, Set<String>> {
   /**
    * {@inheritDoc}
    */
   @Override
-  public Set<String> reduce(Set<String> set1, Set<String> set2) throws Exception {
-    set1.addAll(set2);
-    return set1;
+  public Set<String> map(E e) throws Exception {
+    return Sets.newHashSet(e.getLabel());
   }
 }

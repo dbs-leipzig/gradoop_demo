@@ -15,7 +15,7 @@
  * along with Gradoop.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.gradoop.demos.grouping.server;
+package org.gradoop.demo.server;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -25,8 +25,8 @@ import org.gradoop.common.model.impl.pojo.GraphHead;
 import org.gradoop.common.model.impl.pojo.Vertex;
 import org.gradoop.common.model.impl.properties.Property;
 
-import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Converts a logical graph or a read JSON into a cytoscape-conform JSON.
@@ -81,33 +81,38 @@ public class CytoJSONBuilder {
   /**
    * Takes a logical graph and converts it into a cytoscape-conform JSON.
    *
-   * @param graphHead the graph head
+   * @param graphHeads the graph heads
    * @param vertices  the vertices
    * @param edges     the edges
    * @return a cytoscape-conform JSON
    * @throws JSONException if the creation of the JSON fails
    */
-  static String getJSON(GraphHead graphHead, List<Vertex> vertices, List<Edge> edges) throws
-    JSONException {
+  static String getJSONString(List<GraphHead> graphHeads, List<Vertex> vertices, List<Edge> edges) throws
+         JSONException {
 
     JSONObject returnedJSON = new JSONObject();
 
     returnedJSON.put(TYPE, "graph");
 
-    JSONArray graphArray = new JSONArray();
-    JSONObject graphObject = new JSONObject();
-    JSONObject graphProperties = new JSONObject();
-    graphObject.put(IDENTIFIER, graphHead.getId());
-    graphObject.put(LABEL, graphHead.getLabel());
-    if (graphHead.getProperties() != null) {
-      for (Property prop : graphHead.getProperties()) {
-        graphProperties.put(prop.getKey(), prop.getValue());
-      }
-    }
-    graphObject.put(PROPERTIES, graphProperties);
-    graphArray.put(graphObject);
+    List<JSONObject> graphObjects = graphHeads.stream().map(graphHead -> {
+      try {
+        JSONObject graphObject = new JSONObject();
 
-    returnedJSON.put(GRAPHS, graphArray);
+        JSONObject graphProperties = new JSONObject();
+        graphObject.put(IDENTIFIER, graphHead.getId());
+        graphObject.put(LABEL, graphHead.getLabel());
+        if (graphHead.getProperties() != null) {
+          for (Property prop : graphHead.getProperties()) {
+            graphProperties.put(prop.getKey(), prop.getValue());
+          }
+        }
+        return graphObject.put(PROPERTIES, graphProperties);
+      } catch (JSONException e) {
+        throw new RuntimeException("Foobar");
+      }
+    }).collect(Collectors.toList());
+
+    returnedJSON.put(GRAPHS, graphObjects);
 
     JSONArray vertexArray = new JSONArray();
     for (Vertex vertex : vertices) {
@@ -149,8 +154,8 @@ public class CytoJSONBuilder {
 
 
     returnedJSON.put(EDGES, edgeArray);
-    return returnedJSON.toString();
 
+    return returnedJSON.toString();
   }
 
   /**
@@ -162,7 +167,7 @@ public class CytoJSONBuilder {
    * @return cytoscape-conform JSON
    * @throws JSONException if JSON creation fails
    */
-  static String getJSON(JSONObject graph, JSONArray vertices, JSONArray edges) throws
+  static String getJSONString(JSONObject graph, JSONArray vertices, JSONArray edges) throws
     JSONException {
 
     JSONObject returnedJSON = new JSONObject();
@@ -217,6 +222,5 @@ public class CytoJSONBuilder {
     }
     returnedJSON.put(EDGES, edgeArray);
     return returnedJSON.toString();
-
   }
 }
