@@ -93,4 +93,8 @@ form fieldset {
 .select2-container .select2-search--inline {
   margin-top: 0; }
 
+.qtip-content {
+  font-size: 14px;
+  line-height: 1.4; }
+
 /*# sourceMappingURL=layout.css.map */
