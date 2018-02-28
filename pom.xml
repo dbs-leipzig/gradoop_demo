@@ -46,21 +46,10 @@
 
     <dependencies>
         <!-- Gradoop -->
-        <dependency>
-            <groupId>org.gradoop</groupId>
-            <artifactId>gradoop-common</artifactId>
-            <version>${dep.gradoop.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.gradoop</groupId>
             <artifactId>gradoop-flink</artifactId>
-            <version>${dep.gradoop.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.gradoop</groupId>
-            <artifactId>gradoop-examples</artifactId>
             <version>${dep.gradoop.version}</version>
         </dependency>
 
@@ -99,44 +88,6 @@
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-json</artifactId>
             <version>${dep.jersey.version}</version>
-        </dependency>
-
-        <!-- Flink -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-java</artifactId>
-            <version>${dep.flink.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients_2.11</artifactId>
-            <version>${dep.flink.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-gelly_2.11</artifactId>
-            <version>${dep.flink.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-hbase_2.11</artifactId>
-            <version>${dep.flink.version}</version>
-        </dependency>
-
-        <!-- Others -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${dep.gson.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>${dep.mongodb.version}</version>
         </dependency>
     </dependencies>
 </project>
