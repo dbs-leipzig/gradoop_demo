@@ -10,26 +10,12 @@
     <version>0.2.0</version>
 
     <properties>
-        <dep.flink.version>1.1.2</dep.flink.version>
-        <dep.gradoop.version>0.3.0-SNAPSHOT</dep.gradoop.version>
+        <dep.flink.version>1.3.1</dep.flink.version>
+        <dep.gradoop.version>0.3.2</dep.gradoop.version>
         <dep.jersey.version>1.19.3</dep.jersey.version>
         <dep.gson.version>2.8.0</dep.gson.version>
         <dep.mongodb.version>3.3.0</dep.mongodb.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>dbleipzig</id>
-            <name>Database Group Leipzig University</name>
-            <url>https://wdiserv1.informatik.uni-leipzig.de:443/archiva/repository/dbleipzig/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>
@@ -46,29 +32,29 @@
 
     <dependencies>
         <!-- Gradoop -->
-
         <dependency>
             <groupId>org.gradoop</groupId>
             <artifactId>gradoop-flink</artifactId>
             <version>${dep.gradoop.version}</version>
         </dependency>
 
+        <!-- Flink -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-java</artifactId>
+            <version>${dep.flink.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients_2.11</artifactId>
+            <version>${dep.flink.version}</version>
+        </dependency>
+
         <!-- Jersey -->
         <dependency>
             <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-            <version>${dep.jersey.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>${dep.jersey.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
             <version>${dep.jersey.version}</version>
         </dependency>
 
@@ -80,14 +66,9 @@
 
         <dependency>
             <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-grizzly2-servlet</artifactId>
-            <version>${dep.jersey.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-json</artifactId>
             <version>${dep.jersey.version}</version>
         </dependency>
+
     </dependencies>
 </project>
