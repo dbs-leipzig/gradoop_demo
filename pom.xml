@@ -9,6 +9,13 @@
     <description>Demo application for GRADOOP operators (www.gradoop.com)</description>
     <version>0.2.0</version>
 
+    <licenses>
+        <license>
+            <name>Apache 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
     <properties>
         <dep.flink.version>1.3.1</dep.flink.version>
         <dep.gradoop.version>0.3.2</dep.gradoop.version>
