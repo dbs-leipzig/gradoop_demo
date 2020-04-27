@@ -23,25 +23,36 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.gradoop.common.model.impl.pojo.Edge;
-import org.gradoop.common.model.impl.pojo.GraphHead;
-import org.gradoop.common.model.impl.pojo.Vertex;
-import org.gradoop.demo.server.functions.*;
+import org.gradoop.common.model.impl.pojo.EPGMEdge;
+import org.gradoop.common.model.impl.pojo.EPGMGraphHead;
+import org.gradoop.common.model.impl.pojo.EPGMVertex;
+import org.gradoop.demo.server.functions.AcceptNoneFilter;
+import org.gradoop.demo.server.functions.LabelFilter;
+import org.gradoop.demo.server.functions.LabelGroupReducer;
+import org.gradoop.demo.server.functions.LabelMapper;
+import org.gradoop.demo.server.functions.LabelReducer;
+import org.gradoop.demo.server.functions.PropertyKeyMapper;
 import org.gradoop.demo.server.pojo.GroupingRequest;
 import org.gradoop.flink.io.impl.csv.CSVDataSource;
-import org.gradoop.flink.model.api.epgm.GraphCollection;
-import org.gradoop.flink.model.api.epgm.LogicalGraph;
+import org.gradoop.flink.model.impl.epgm.GraphCollection;
+import org.gradoop.flink.model.impl.epgm.LogicalGraph;
+import org.gradoop.flink.model.impl.operators.aggregation.functions.count.Count;
+import org.gradoop.flink.model.impl.operators.aggregation.functions.max.MaxProperty;
+import org.gradoop.flink.model.impl.operators.aggregation.functions.min.MinProperty;
+import org.gradoop.flink.model.impl.operators.aggregation.functions.sum.SumProperty;
 import org.gradoop.flink.model.impl.operators.grouping.Grouping;
 import org.gradoop.flink.model.impl.operators.grouping.GroupingStrategy;
-import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.CountAggregator;
-import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.MaxAggregator;
-import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.MinAggregator;
-import org.gradoop.flink.model.impl.operators.grouping.functions.aggregation.SumAggregator;
 import org.gradoop.flink.model.impl.operators.matching.common.MatchStrategy;
 import org.gradoop.flink.model.impl.operators.matching.common.statistics.GraphStatistics;
+import org.gradoop.flink.model.impl.operators.matching.single.cypher.CypherPatternMatching;
 import org.gradoop.flink.util.GradoopFlinkConfig;
 
-import javax.ws.rs.*;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -115,7 +126,9 @@ public class RequestHandler {
 
     // TODO load proper statistics
     GraphStatistics graphStatistics = new GraphStatistics(1, 1, 1, 1);
-    GraphCollection res = graph.cypher(query,attacheData, MatchStrategy.HOMOMORPHISM, MatchStrategy.ISOMORPHISM, graphStatistics);
+    GraphCollection res = graph.callForCollection(
+      new CypherPatternMatching<>(query, attacheData, MatchStrategy.HOMOMORPHISM, MatchStrategy.ISOMORPHISM,
+        graphStatistics));
 
     return createResponse(res);
   }
@@ -325,7 +338,6 @@ public class RequestHandler {
    * @param request GroupingRequest send to the server, containing the parameters for a
    *        {@link Grouping}.
    * @return a JSON containing the result of the executed Grouping, a graph
-   * @throws Exception if the collecting of the distributed data fails
    */
   @POST
   @Path("/grouping")
@@ -374,16 +386,16 @@ public class RequestHandler {
       String[] split = vertexAggrFunc.split(" ");
       switch (split[0]) {
       case "max":
-        builder.addVertexAggregator(new MaxAggregator(split[1], "max " + split[1]));
+        builder.addVertexAggregateFunction(new MaxProperty(split[1], "max " + split[1]));
         break;
       case "min":
-        builder.addVertexAggregator(new MinAggregator(split[1], "min " + split[1]));
+        builder.addVertexAggregateFunction(new MinProperty(split[1], "min " + split[1]));
         break;
       case "sum":
-        builder.addVertexAggregator(new SumAggregator(split[1], "sum " + split[1]));
+        builder.addVertexAggregateFunction(new SumProperty(split[1], "sum " + split[1]));
         break;
       case "count":
-        builder.addVertexAggregator(new CountAggregator());
+        builder.addVertexAggregateFunction(new Count());
         break;
       }
     }
@@ -394,16 +406,16 @@ public class RequestHandler {
       String[] split = edgeAggrFunc.split(" ");
       switch (split[0]) {
       case "max":
-        builder.addEdgeAggregator(new MaxAggregator(split[1], "max " + split[1]));
+        builder.addEdgeAggregateFunction(new MaxProperty(split[1], "max " + split[1]));
         break;
       case "min":
-        builder.addEdgeAggregator(new MinAggregator(split[1], "min " + split[1]));
+        builder.addEdgeAggregateFunction(new MinProperty(split[1], "min " + split[1]));
         break;
       case "sum":
-        builder.addEdgeAggregator(new SumAggregator(split[1], "sum " + split[1]));
+        builder.addEdgeAggregateFunction(new SumProperty(split[1], "sum " + split[1]));
         break;
       case "count":
-        builder.addEdgeAggregator(new CountAggregator());
+        builder.addEdgeAggregateFunction(new Count());
         break;
       }
     }
@@ -411,16 +423,16 @@ public class RequestHandler {
     // by default, we use the group reduce strategy
     builder.setStrategy(GroupingStrategy.GROUP_REDUCE);
 
-    graph = builder.build().execute(graph);
+    graph = graph.callForGraph(builder.build());
 
     // specify the output collections
     return createResponse(graph);
   }
 
   private Response createResponse(GraphCollection graph) {
-    List<GraphHead> resultHead = new ArrayList<>();
-    List<Vertex> resultVertices = new ArrayList<>();
-    List<Edge> resultEdges = new ArrayList<>();
+    List<EPGMGraphHead> resultHead = new ArrayList<>();
+    List<EPGMVertex> resultVertices = new ArrayList<>();
+    List<EPGMEdge> resultEdges = new ArrayList<>();
 
     graph.getGraphHeads().output(new LocalCollectionOutputFormat<>(resultHead));
     graph.getVertices().output(new LocalCollectionOutputFormat<>(resultVertices));
@@ -430,9 +442,9 @@ public class RequestHandler {
   }
 
   private Response createResponse(LogicalGraph graph) {
-    List<GraphHead> resultHead = new ArrayList<>();
-    List<Vertex> resultVertices = new ArrayList<>();
-    List<Edge> resultEdges = new ArrayList<>();
+    List<EPGMGraphHead> resultHead = new ArrayList<>();
+    List<EPGMVertex> resultVertices = new ArrayList<>();
+    List<EPGMEdge> resultEdges = new ArrayList<>();
 
     graph.getGraphHead().output(new LocalCollectionOutputFormat<>(resultHead));
     graph.getVertices().output(new LocalCollectionOutputFormat<>(resultVertices));
@@ -441,7 +453,10 @@ public class RequestHandler {
     return getResponse(resultHead, resultVertices, resultEdges);
   }
 
-  private Response getResponse(List<GraphHead> resultHead, List<Vertex> resultVertices, List<Edge> resultEdges) {
+  private Response getResponse(
+    List<EPGMGraphHead> resultHead,
+    List<EPGMVertex> resultVertices,
+    List<EPGMEdge> resultEdges) {
     try {
       ENV.execute();
       // build the response JSON from the collections

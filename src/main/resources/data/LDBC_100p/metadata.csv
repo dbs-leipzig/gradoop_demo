@@ -1,3 +1,4 @@
+g;DB;
 v;forum;title:string
 v;person;browserUsed:string,firstName:string,gender:string,lastName:string,locationIP:string
 v;country;name:string,url:string

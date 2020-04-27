@@ -18,7 +18,7 @@ package org.gradoop.demo.server.functions;
 
 import com.google.common.collect.Sets;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.gradoop.common.model.api.entities.EPGMElement;
+import org.gradoop.common.model.api.entities.Element;
 
 import java.util.Set;
 
@@ -26,10 +26,8 @@ import java.util.Set;
  * Extracts all labels from an epgm element
  * @param <E> epgm element type
  */
-public class LabelMapper<E extends EPGMElement> implements MapFunction<E, Set<String>> {
-  /**
-   * {@inheritDoc}
-   */
+public class LabelMapper<E extends Element> implements MapFunction<E, Set<String>> {
+
   @Override
   public Set<String> map(E e) throws Exception {
     return Sets.newHashSet(e.getLabel());

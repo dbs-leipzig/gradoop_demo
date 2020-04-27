@@ -19,9 +19,9 @@ package org.gradoop.demo.server;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.gradoop.common.model.impl.pojo.Edge;
-import org.gradoop.common.model.impl.pojo.GraphHead;
-import org.gradoop.common.model.impl.pojo.Vertex;
+import org.gradoop.common.model.impl.pojo.EPGMEdge;
+import org.gradoop.common.model.impl.pojo.EPGMGraphHead;
+import org.gradoop.common.model.impl.pojo.EPGMVertex;
 import org.gradoop.common.model.impl.properties.Property;
 
 import java.util.List;
@@ -86,8 +86,8 @@ public class CytoJSONBuilder {
    * @return a cytoscape-conform JSON
    * @throws JSONException if the creation of the JSON fails
    */
-  static String getJSONString(List<GraphHead> graphHeads, List<Vertex> vertices, List<Edge> edges) throws
-         JSONException {
+  static String getJSONString(List<EPGMGraphHead> graphHeads, List<EPGMVertex> vertices, List<EPGMEdge> edges)
+    throws JSONException {
 
     JSONObject returnedJSON = new JSONObject();
 
@@ -114,7 +114,7 @@ public class CytoJSONBuilder {
     returnedJSON.put(GRAPHS, graphObjects);
 
     JSONArray vertexArray = new JSONArray();
-    for (Vertex vertex : vertices) {
+    for (EPGMVertex vertex : vertices) {
       JSONObject vertexObject = new JSONObject();
       JSONObject vertexData = new JSONObject();
 
@@ -133,7 +133,7 @@ public class CytoJSONBuilder {
     returnedJSON.put(VERTICES, vertexArray);
 
     JSONArray edgeArray = new JSONArray();
-    for (Edge edge : edges) {
+    for (EPGMEdge edge : edges) {
       JSONObject edgeObject = new JSONObject();
       JSONObject edgeData = new JSONObject();
       edgeData.put(EDGE_SOURCE, edge.getSourceId());

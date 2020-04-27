@@ -17,14 +17,14 @@
 package org.gradoop.demo.server.functions;
 
 import org.apache.flink.api.common.functions.FilterFunction;
-import org.gradoop.common.model.api.entities.EPGMElement;
-
+import org.gradoop.common.model.api.entities.Element;
 
 /**
  * Remove all elements from the Dataset.
+ *
  * @param <E> epgm element type
  */
-public class AcceptNoneFilter<E extends EPGMElement> implements FilterFunction<E> {
+public class AcceptNoneFilter<E extends Element> implements FilterFunction<E> {
 
   /**
    * {@inheritDoc}

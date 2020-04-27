@@ -19,16 +19,15 @@ package org.gradoop.demo.server.functions;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.util.Collector;
-import org.gradoop.common.model.api.entities.EPGMElement;
+import org.gradoop.common.model.api.entities.Element;
 import org.gradoop.common.model.impl.properties.PropertyValue;
-
 
 /**
  * Mapper that extracts all property keys out of an EPGMElement and determines if the associated
  * properties have a numerical type. The result is returned in a set of Tuple2.
  * @param <T> EPGMElement type
  */
-public class PropertyKeyMapper<T extends EPGMElement>
+public class PropertyKeyMapper<T extends Element>
   implements FlatMapFunction<T, Tuple3<String, String, Boolean>> {
 
   @Override

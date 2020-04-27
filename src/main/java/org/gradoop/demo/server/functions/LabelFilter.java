@@ -18,14 +18,13 @@ package org.gradoop.demo.server.functions;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.api.common.functions.FilterFunction;
-import org.gradoop.common.model.api.entities.EPGMElement;
-
+import org.gradoop.common.model.api.entities.Element;
 
 /**
  * Apply a filter on a dataset of elements. The filter is given as array of allowed labels.
  * @param <E> epgm element type
  */
-public class LabelFilter<E extends EPGMElement> implements FilterFunction<E> {
+public class LabelFilter<E extends Element> implements FilterFunction<E> {
 
   /**
    * Array of allowed labels
